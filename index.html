@@ -619,6 +619,360 @@
   .sync-dot.syncing { background: var(--accent); }
   .sync-dot.ok { background: var(--correct); }
   .sync-dot.err { background: var(--wrong); }
+
+  /* ---- Tab nav ---- */
+  .tab-nav {
+    display: flex;
+    gap: 0;
+    margin-bottom: 28px;
+    border-bottom: 1px solid var(--border);
+  }
+  .tab-btn {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 10px 18px 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-bottom: -1px;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ---- Views ---- */
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ---- Weak mode toggle ---- */
+  .weak-toggle {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 6px 12px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.18s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .weak-toggle:hover { border-color: var(--wrong); color: var(--wrong); }
+  .weak-toggle.active { border-color: var(--wrong); color: var(--wrong); background: rgba(192,70,74,0.1); }
+  .weak-toggle.disabled-state { opacity: 0.35; cursor: not-allowed; }
+
+  /* ---- Stats view ---- */
+  .stats-section { margin-bottom: 36px; }
+  .stats-title {
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+  .stats-overview {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .stat-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 16px;
+  }
+  .stat-box-label { font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+  .stat-box-value { font-size: 1.4rem; color: var(--accent); font-family: 'Playfair Display', serif; }
+
+  .stats-table { width: 100%; border-collapse: collapse; }
+  .stats-table th {
+    font-size: 0.58rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: left;
+    padding: 0 0 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .stats-table th:last-child { text-align: right; }
+  .stats-table td {
+    font-size: 0.78rem;
+    padding: 9px 0;
+    border-bottom: 1px solid rgba(42,42,42,0.5);
+    color: var(--text);
+    vertical-align: middle;
+  }
+  .stats-table td:last-child { text-align: right; }
+  .acc-bar-wrap { display: flex; align-items: center; gap: 10px; justify-content: flex-end; }
+  .acc-bar {
+    width: 60px; height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .acc-bar-fill { height: 100%; border-radius: 2px; transition: width 0.4s ease; }
+  .stats-signin-msg {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.8rem;
+    padding: 48px 0;
+    letter-spacing: 0.05em;
+  }
+  .stats-loading { color: var(--muted); font-size: 0.75rem; letter-spacing: 0.08em; padding: 32px 0; text-align: center; }
+
+  /* ---- Grammar view ---- */
+  .grammar-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .grammar-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 24px 28px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .grammar-card:hover { border-color: #444; }
+  .grammar-card.open { border-color: var(--accent-dim); }
+  .grammar-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+  }
+  .grammar-card-title {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 1.1rem;
+    color: var(--accent);
+  }
+  .grammar-card-hint { font-size: 0.65rem; color: var(--muted); letter-spacing: 0.06em; }
+  .grammar-card-chevron { color: var(--muted); font-size: 0.75rem; transition: transform 0.2s; flex-shrink: 0; }
+  .grammar-card.open .grammar-card-chevron { transform: rotate(180deg); }
+  .grammar-card-body { display: none; margin-top: 20px; }
+  .grammar-card.open .grammar-card-body { display: block; }
+  .grammar-section { margin-bottom: 18px; }
+  .grammar-section-label {
+    font-size: 0.58rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .grammar-section-text { font-size: 0.8rem; line-height: 1.65; color: var(--text); }
+  .grammar-section-text em { color: var(--accent); font-style: normal; }
+  .grammar-examples {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .grammar-example {
+    display: flex;
+    gap: 16px;
+    font-size: 0.78rem;
+    padding: 7px 10px;
+    background: rgba(201,168,76,0.04);
+    border-left: 2px solid var(--accent-dim);
+  }
+  .grammar-example-fr { color: var(--text); min-width: 160px; }
+  .grammar-example-en { color: var(--muted); }
+
+  @media (max-width: 600px) {
+    .tab-btn { font-size: 0.6rem; padding: 10px 12px 8px; }
+    .stats-overview { grid-template-columns: repeat(2, 1fr); }
+    .grammar-card { padding: 18px 16px; }
+    .grammar-example { flex-direction: column; gap: 2px; }
+    .grammar-example-fr { min-width: unset; }
+  }
+
+  /* ---- Tab nav ---- */
+  .tab-nav {
+    display: flex;
+    gap: 0;
+    margin-bottom: 32px;
+    border-bottom: 1px solid var(--border);
+  }
+  .tab-btn {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ---- Weak mode toggle ---- */
+  .weak-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    cursor: pointer;
+    transition: all 0.18s;
+    border-radius: 2px;
+  }
+  .weak-btn:hover { border-color: var(--wrong); color: var(--wrong); }
+  .weak-btn.active { border-color: var(--wrong); color: var(--wrong); background: rgba(192,70,74,0.1); }
+
+  /* ---- Stats view ---- */
+  .stats-view { display: none; }
+  .stats-view.visible { display: block; }
+
+  .stats-summary {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .stat-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 16px 12px;
+    text-align: center;
+  }
+  .stat-box-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    color: var(--accent);
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .stat-box-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .stats-section-title {
+    font-size: 0.65rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+    margin-top: 28px;
+  }
+
+  .stats-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .stats-table td {
+    padding: 8px 4px;
+    font-size: 0.78rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .stats-table td:first-child { color: var(--text); width: 40%; }
+  .stats-table td:last-child { text-align: right; color: var(--muted); font-size: 0.7rem; }
+
+  .acc-bar-wrap {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    width: 100%;
+    margin-top: 4px;
+  }
+  .acc-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+
+  .stats-login-msg {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.82rem;
+    padding: 48px 0;
+    line-height: 1.8;
+  }
+
+  .stats-loading {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    padding: 40px 0;
+  }
+
+  @media (max-width: 600px) {
+    .stats-summary { grid-template-columns: repeat(2, 1fr); }
+    .tab-btn { padding: 10px 12px; font-size: 0.62rem; }
+  }
+
+  /* ---- Grammar view ---- */
+  .grammar-view { display: none; }
+  .grammar-view.visible { display: block; }
+
+  .grammar-tense {
+    margin-bottom: 28px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 24px 28px;
+  }
+  .grammar-tense-name {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 1.1rem;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  .grammar-tense-hint {
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent-dim);
+    margin-bottom: 14px;
+  }
+  .grammar-tense-desc {
+    font-size: 0.8rem;
+    color: var(--muted);
+    line-height: 1.7;
+    margin-bottom: 14px;
+  }
+  .grammar-formation {
+    background: rgba(201,168,76,0.05);
+    border-left: 2px solid var(--accent-dim);
+    padding: 10px 14px;
+    font-size: 0.78rem;
+    color: var(--text);
+    line-height: 1.7;
+    margin-bottom: 10px;
+  }
+  .grammar-example {
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-style: italic;
+  }
+  .grammar-example span { color: var(--text); }
+
+  @media (max-width: 600px) {
+    .grammar-tense { padding: 18px 16px; }
+  }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -636,17 +990,26 @@
   <header>
     <div class="title">Conjugaison</div>
     <div style="display:flex; align-items:center; gap:12px;">
-      <div class="score-display">Score <span id="score-display">0 / 0</span></div>
+      <div class="score-display" id="score-display-wrap">Score <span id="score-display">0 / 0</span></div>
       <div class="auth-bar" id="auth-bar">
         <button class="auth-btn" id="auth-btn" onclick="handleAuth()">Sign in</button>
       </div>
     </div>
   </header>
 
-  <div style="display:flex; gap:8px; align-items:center; margin-bottom:24px;">
-    <button class="verb-picker-btn" id="open-tense-picker">Temps ▾</button>
-    <button class="verb-picker-btn" id="open-verb-picker">Verbes ▾</button>
-  </div>
+  <nav class="tab-nav">
+    <button class="tab-btn active" data-tab="quiz">Quiz</button>
+    <button class="tab-btn" data-tab="stats">Stats</button>
+    <button class="tab-btn" data-tab="grammar">Grammaire</button>
+  </nav>
+
+  <!-- ===== QUIZ VIEW ===== -->
+  <div class="view active" id="view-quiz">
+    <div style="display:flex; gap:8px; align-items:center; margin-bottom:24px; flex-wrap:nowrap; overflow-x:auto;">
+      <button class="verb-picker-btn" id="open-tense-picker">Temps ▾</button>
+      <button class="verb-picker-btn" id="open-verb-picker">Verbes ▾</button>
+      <button class="weak-toggle" id="weak-toggle" title="Train only verbs you got wrong at least once">⚠ Faibles</button>
+    </div>
 
   <div class="modal-overlay" id="tense-modal">
     <div class="modal">
@@ -711,7 +1074,47 @@
     <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
     <div class="streak" id="streak-display"></div>
   </div>
-</div>
+  </div><!-- end view-quiz -->
+
+  <!-- ===== STATS VIEW ===== -->
+  <div class="view" id="view-stats">
+    <div id="stats-signin-msg" class="stats-signin-msg" style="display:none">
+      Sign in with Google to track your stats.
+    </div>
+    <div id="stats-loading" class="stats-loading" style="display:none">Chargement…</div>
+    <div id="stats-content" style="display:none">
+      <div class="stats-section">
+        <div class="stats-title">Vue d'ensemble</div>
+        <div class="stats-overview">
+          <div class="stat-box"><div class="stat-box-label">Total réponses</div><div class="stat-box-value" id="stat-total">—</div></div>
+          <div class="stat-box"><div class="stat-box-label">Précision globale</div><div class="stat-box-value" id="stat-accuracy">—</div></div>
+          <div class="stat-box"><div class="stat-box-label">Meilleur streak</div><div class="stat-box-value" id="stat-streak">—</div></div>
+          <div class="stat-box"><div class="stat-box-label">Verbes pratiqués</div><div class="stat-box-value" id="stat-verbs-count">—</div></div>
+        </div>
+      </div>
+      <div class="stats-section">
+        <div class="stats-title">Par temps — du plus faible au plus fort</div>
+        <table class="stats-table" id="tense-stats-table">
+          <thead><tr><th>Temps</th><th>Réponses</th><th>Précision</th></tr></thead>
+          <tbody id="tense-stats-body"></tbody>
+        </table>
+      </div>
+      <div class="stats-section">
+        <div class="stats-title">Par verbe — du plus faible au plus fort</div>
+        <table class="stats-table" id="verb-stats-table">
+          <thead><tr><th>Verbe</th><th>Réponses</th><th>Précision</th></tr></thead>
+          <tbody id="verb-stats-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== GRAMMAR VIEW ===== -->
+  <div class="view" id="view-grammar">
+    <div class="grammar-grid" id="grammar-grid"></div>
+  </div>
+
+</div><!-- end container -->
 
 <script>
 const VERB_DATA = {
@@ -7417,6 +7820,8 @@ function checkAnswer() {
       document.getElementById('next-btn').focus();
     } else {
       streak = 0;
+      // track for weak mode (also add to weakVerbs for live session use)
+      if (typeof weakVerbs !== 'undefined') weakVerbs.add(current.verb.inf);
       updateScore();
       // Show the correct answer, then ask to retype
       input.value = '';
@@ -7703,16 +8108,7 @@ async function syncStat(verb, tense, isCorrect) {
   }
 }
 
-// Init auth state
-sb.auth.getSession().then(({ data: { session } }) => {
-  currentUser = session?.user ?? null;
-  updateAuthBar(currentUser);
-});
-
-sb.auth.onAuthStateChange((_event, session) => {
-  currentUser = session?.user ?? null;
-  updateAuthBar(currentUser);
-});
+// Init auth state handled below with onAuthStateChange hook
 
 // Start
 (async () => {
@@ -7727,6 +8123,346 @@ sb.auth.onAuthStateChange((_event, session) => {
   newQuestion();
   updateScore();
 })();
+
+// ============================================================
+// TAB NAVIGATION
+// ============================================================
+let currentTab = 'quiz';
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tab = btn.dataset.tab;
+    if (tab === currentTab) return;
+    currentTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + tab));
+    if (tab === 'stats') loadStats();
+    if (tab === 'grammar') renderGrammar();
+  });
+});
+
+// ============================================================
+// WEAK MODE
+// ============================================================
+let weakModeOn = false;
+let weakVerbs = new Set(); // verbs with at least one wrong answer (from Supabase)
+
+function updateWeakToggle() {
+  const btn = document.getElementById('weak-toggle');
+  const hasData = weakVerbs.size > 0;
+  btn.classList.toggle('active', weakModeOn);
+  btn.classList.toggle('disabled-state', !hasData && !weakModeOn);
+  btn.title = weakModeOn
+    ? `Mode faibles actif (${weakVerbs.size} verbes)`
+    : hasData
+      ? `Entraîner les ${weakVerbs.size} verbes avec des erreurs`
+      : 'Pas encore de données (répondez à quelques questions d\'abord)';
+}
+
+document.getElementById('weak-toggle').addEventListener('click', () => {
+  if (!currentUser) { alert('Connecte-toi pour utiliser le mode faibles.'); return; }
+  if (weakVerbs.size === 0 && !weakModeOn) return;
+  weakModeOn = !weakModeOn;
+  if (weakModeOn) {
+    // override activeVerbs to weak verbs, but don't change the picker
+    activeVerbs = new Set(weakVerbs);
+  } else {
+    // restore all verbs (or whatever was selected — reset to all for simplicity)
+    activeVerbs = new Set(VERBS.map(v => v.inf));
+    const verbBtn = document.getElementById('open-verb-picker');
+    verbBtn.textContent = 'Verbes ▾';
+  }
+  updateWeakToggle();
+  newQuestion();
+});
+
+async function loadWeakVerbs() {
+  if (!currentUser) return;
+  try {
+    const { data } = await sb.from('verb_stats')
+      .select('verb, correct, total')
+      .eq('user_id', currentUser.id);
+    if (!data) return;
+    weakVerbs = new Set(data.filter(r => r.correct < r.total).map(r => r.verb));
+    updateWeakToggle();
+  } catch(e) { console.error('loadWeakVerbs failed', e); }
+}
+
+// ============================================================
+// STATS
+// ============================================================
+let statsLoaded = false;
+
+async function loadStats() {
+  if (!currentUser) {
+    document.getElementById('stats-signin-msg').style.display = 'block';
+    document.getElementById('stats-loading').style.display = 'none';
+    document.getElementById('stats-content').style.display = 'none';
+    return;
+  }
+  document.getElementById('stats-signin-msg').style.display = 'none';
+  document.getElementById('stats-loading').style.display = 'block';
+  document.getElementById('stats-content').style.display = 'none';
+
+  try {
+    const { data } = await sb.from('verb_stats')
+      .select('verb, tense, correct, total')
+      .eq('user_id', currentUser.id);
+
+    if (!data || data.length === 0) {
+      document.getElementById('stats-loading').textContent = 'Pas encore de données. Réponds à quelques questions !';
+      return;
+    }
+
+    // Overview
+    const totalAnswers = data.reduce((s, r) => s + r.total, 0);
+    const totalCorrect = data.reduce((s, r) => s + r.correct, 0);
+    const globalAcc = totalAnswers > 0 ? Math.round(totalCorrect / totalAnswers * 100) : 0;
+    const verbsCount = new Set(data.map(r => r.verb)).size;
+
+    document.getElementById('stat-total').textContent = totalAnswers;
+    document.getElementById('stat-accuracy').textContent = globalAcc + '%';
+    document.getElementById('stat-streak').textContent = bestStreak || '—';
+    document.getElementById('stat-verbs-count').textContent = verbsCount;
+
+    // Tense stats
+    const tenseMap = {};
+    data.forEach(r => {
+      if (!tenseMap[r.tense]) tenseMap[r.tense] = { correct: 0, total: 0 };
+      tenseMap[r.tense].correct += r.correct;
+      tenseMap[r.tense].total += r.total;
+    });
+    const tenseRows = Object.entries(tenseMap)
+      .map(([t, v]) => ({ name: t, acc: Math.round(v.correct / v.total * 100), total: v.total }))
+      .sort((a, b) => a.acc - b.acc);
+
+    const tbody1 = document.getElementById('tense-stats-body');
+    tbody1.innerHTML = tenseRows.map(r => `
+      <tr>
+        <td>${r.name}</td>
+        <td style="color:var(--muted)">${r.total}</td>
+        <td>
+          <div class="acc-bar-wrap">
+            <span style="color:${r.acc < 50 ? 'var(--wrong)' : r.acc < 75 ? 'var(--accent)' : 'var(--correct)'}">${r.acc}%</span>
+            <div class="acc-bar"><div class="acc-bar-fill" style="width:${r.acc}%;background:${r.acc < 50 ? 'var(--wrong)' : r.acc < 75 ? 'var(--accent)' : 'var(--correct)'}"></div></div>
+          </div>
+        </td>
+      </tr>`).join('');
+
+    // Verb stats
+    const verbMap = {};
+    data.forEach(r => {
+      if (!verbMap[r.verb]) verbMap[r.verb] = { correct: 0, total: 0 };
+      verbMap[r.verb].correct += r.correct;
+      verbMap[r.verb].total += r.total;
+    });
+    const verbRows = Object.entries(verbMap)
+      .map(([v, d]) => ({ name: v, acc: Math.round(d.correct / d.total * 100), total: d.total }))
+      .sort((a, b) => a.acc - b.acc);
+
+    const tbody2 = document.getElementById('verb-stats-body');
+    tbody2.innerHTML = verbRows.map(r => `
+      <tr>
+        <td>${r.name}</td>
+        <td style="color:var(--muted)">${r.total}</td>
+        <td>
+          <div class="acc-bar-wrap">
+            <span style="color:${r.acc < 50 ? 'var(--wrong)' : r.acc < 75 ? 'var(--accent)' : 'var(--correct)'}">${r.acc}%</span>
+            <div class="acc-bar"><div class="acc-bar-fill" style="width:${r.acc}%;background:${r.acc < 50 ? 'var(--wrong)' : r.acc < 75 ? 'var(--accent)' : 'var(--correct)'}"></div></div>
+          </div>
+        </td>
+      </tr>`).join('');
+
+    document.getElementById('stats-loading').style.display = 'none';
+    document.getElementById('stats-content').style.display = 'block';
+    statsLoaded = true;
+  } catch(e) {
+    console.error('loadStats failed', e);
+    document.getElementById('stats-loading').textContent = 'Erreur lors du chargement.';
+  }
+}
+
+// ============================================================
+// GRAMMAR REFERENCE
+// ============================================================
+const GRAMMAR_DATA = [
+  {
+    name: 'Présent',
+    hint: 'Actions actuelles, habitudes, vérités générales',
+    formation: '<em>-er</em> : parle / parles / parle / parlons / parlez / parlent<br><em>-ir</em> : finis / finis / finit / finissons / finissez / finissent<br><em>-re</em> : vends / vends / vend / vendons / vendez / vendent',
+    usage: 'Décrit ce qui se passe maintenant, des habitudes régulières, ou des faits permanents.',
+    examples: [
+      { fr: 'Je parle français.', en: 'I speak French.' },
+      { fr: 'Elle travaille tous les jours.', en: 'She works every day.' },
+      { fr: 'Le soleil se lève à l\'est.', en: 'The sun rises in the east.' },
+    ]
+  },
+  {
+    name: 'Imparfait',
+    hint: 'Descriptions passées, actions répétées ou continues',
+    formation: 'Radical de la 1ère personne du pluriel au présent + <em>-ais / -ais / -ait / -ions / -iez / -aient</em>',
+    usage: 'Décrit des états ou actions habituels dans le passé, le décor d\'une histoire, ou une action interrompue par une autre.',
+    examples: [
+      { fr: 'Quand j\'étais enfant, je jouais au foot.', en: 'When I was a child, I used to play football.' },
+      { fr: 'Il pleuvait ce matin-là.', en: 'It was raining that morning.' },
+      { fr: 'Elle lisait quand il est arrivé.', en: 'She was reading when he arrived.' },
+    ]
+  },
+  {
+    name: 'Passé composé',
+    hint: 'Actions passées terminées',
+    formation: '<em>avoir</em> ou <em>être</em> au présent + participe passé<br>Verbes DR MRS VANDERTRAMP → être',
+    usage: 'Décrit des actions passées et terminées, souvent avec un début ou une fin précise. Contraste avec l\'imparfait.',
+    examples: [
+      { fr: 'J\'ai mangé une pomme.', en: 'I ate / have eaten an apple.' },
+      { fr: 'Elle est partie hier.', en: 'She left yesterday.' },
+      { fr: 'Nous avons fini le projet.', en: 'We finished the project.' },
+    ]
+  },
+  {
+    name: 'Futur simple',
+    hint: 'Actions futures certaines ou planifiées',
+    formation: 'Infinitif (sans le -e final pour -re) + <em>-ai / -as / -a / -ons / -ez / -ont</em>',
+    usage: 'Exprime des événements futurs. Pour les irréguliers : être → ser-, avoir → aur-, aller → ir-, faire → fer-…',
+    examples: [
+      { fr: 'Je parlerai demain.', en: 'I will speak tomorrow.' },
+      { fr: 'Nous irons en France l\'été prochain.', en: 'We will go to France next summer.' },
+      { fr: 'Il fera beau ce week-end.', en: 'The weather will be nice this weekend.' },
+    ]
+  },
+  {
+    name: 'Futur proche',
+    hint: 'Intentions immédiates ou plans concrets',
+    formation: '<em>aller</em> au présent + infinitif',
+    usage: 'Exprime une intention ou un événement imminent. Plus informel que le futur simple.',
+    examples: [
+      { fr: 'Je vais manger.', en: 'I\'m going to eat.' },
+      { fr: 'Elle va partir dans cinq minutes.', en: 'She\'s going to leave in five minutes.' },
+      { fr: 'Nous allons commencer le cours.', en: 'We\'re going to start the lesson.' },
+    ]
+  },
+  {
+    name: 'Plus-que-parfait',
+    hint: 'Actions antérieures à un autre événement passé',
+    formation: '<em>avoir</em> ou <em>être</em> à l\'imparfait + participe passé',
+    usage: 'Décrit une action qui s\'est produite avant une autre action passée. Équivalent du past perfect anglais.',
+    examples: [
+      { fr: 'Il avait déjà mangé quand je suis arrivé.', en: 'He had already eaten when I arrived.' },
+      { fr: 'Elle était partie avant la pluie.', en: 'She had left before the rain.' },
+      { fr: 'Nous avions fini quand tu as appelé.', en: 'We had finished when you called.' },
+    ]
+  },
+  {
+    name: 'Subjonctif présent',
+    hint: 'Doute, volonté, émotion — après "que"',
+    formation: 'Radical de la 3ème personne du pluriel au présent + <em>-e / -es / -e / -ions / -iez / -ent</em>',
+    usage: 'Utilisé après des expressions de volonté, d\'émotion, de doute, de nécessité : <em>il faut que, je veux que, bien que, pour que…</em>',
+    examples: [
+      { fr: 'Il faut que tu parles.', en: 'You need to speak.' },
+      { fr: 'Je veux qu\'il vienne.', en: 'I want him to come.' },
+      { fr: 'Bien qu\'elle soit fatiguée…', en: 'Although she is tired…' },
+    ]
+  },
+  {
+    name: 'Subjonctif passé',
+    hint: 'Subjonctif d\'une action antérieure',
+    formation: '<em>avoir</em> ou <em>être</em> au subjonctif présent + participe passé',
+    usage: 'Utilisé quand l\'action subordonnée est antérieure à l\'action principale — dans les mêmes contextes que le subjonctif présent.',
+    examples: [
+      { fr: 'Je suis content qu\'il soit venu.', en: 'I\'m glad he came.' },
+      { fr: 'Il est possible qu\'elle ait oublié.', en: 'It\'s possible she forgot.' },
+      { fr: 'Bien qu\'il ait mangé…', en: 'Although he has eaten…' },
+    ]
+  },
+  {
+    name: 'Conditionnel présent',
+    hint: 'Hypothèses, politesse, irréel du présent',
+    formation: 'Infinitif (même base que futur simple) + <em>-ais / -ais / -ait / -ions / -iez / -aient</em>',
+    usage: 'Exprime des hypothèses (<em>si + imparfait → conditionnel présent</em>), des souhaits, ou des demandes polies.',
+    examples: [
+      { fr: 'Si j\'avais le temps, je lirais plus.', en: 'If I had the time, I would read more.' },
+      { fr: 'Je voudrais un café.', en: 'I would like a coffee.' },
+      { fr: 'Pourriez-vous m\'aider ?', en: 'Could you help me?' },
+    ]
+  },
+  {
+    name: 'Conditionnel passé',
+    hint: 'Hypothèses sur le passé, regrets',
+    formation: '<em>avoir</em> ou <em>être</em> au conditionnel présent + participe passé',
+    usage: 'Exprime ce qui <em>aurait pu</em> se passer (<em>si + plus-que-parfait → conditionnel passé</em>), des regrets.',
+    examples: [
+      { fr: 'Si j\'avais su, j\'aurais agi.', en: 'If I had known, I would have acted.' },
+      { fr: 'Elle serait venue si elle avait pu.', en: 'She would have come if she could have.' },
+      { fr: 'Nous aurions gagné avec plus de temps.', en: 'We would have won with more time.' },
+    ]
+  },
+];
+
+let grammarRendered = false;
+
+function renderGrammar() {
+  if (grammarRendered) return;
+  grammarRendered = true;
+  const grid = document.getElementById('grammar-grid');
+  grid.innerHTML = GRAMMAR_DATA.map((t, i) => `
+    <div class="grammar-card" id="gc-${i}">
+      <div class="grammar-card-header" onclick="toggleGrammarCard(${i})">
+        <div>
+          <div class="grammar-card-title">${t.name}</div>
+          <div class="grammar-card-hint">${t.hint}</div>
+        </div>
+        <div class="grammar-card-chevron">▼</div>
+      </div>
+      <div class="grammar-card-body">
+        <div class="grammar-section">
+          <div class="grammar-section-label">Utilisation</div>
+          <div class="grammar-section-text">${t.usage}</div>
+        </div>
+        <div class="grammar-section">
+          <div class="grammar-section-label">Formation</div>
+          <div class="grammar-section-text">${t.formation}</div>
+        </div>
+        <div class="grammar-section">
+          <div class="grammar-section-label">Exemples</div>
+          <div class="grammar-examples">
+            ${t.examples.map(e => `
+              <div class="grammar-example">
+                <div class="grammar-example-fr">${e.fr}</div>
+                <div class="grammar-example-en">${e.en}</div>
+              </div>`).join('')}
+          </div>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function toggleGrammarCard(i) {
+  document.getElementById('gc-' + i).classList.toggle('open');
+}
+
+// Hook into auth state change to load weak verbs
+const _origAuthChange = sb.auth.onAuthStateChange;
+sb.auth.onAuthStateChange((_event, session) => {
+  currentUser = session?.user ?? null;
+  updateAuthBar(currentUser);
+  if (currentUser) {
+    loadWeakVerbs();
+    if (currentTab === 'stats') loadStats();
+  } else {
+    weakVerbs = new Set();
+    if (weakModeOn) {
+      weakModeOn = false;
+      activeVerbs = new Set(VERBS.map(v => v.inf));
+    }
+    updateWeakToggle();
+  }
+});
+
+// Also load on init if already signed in
+sb.auth.getSession().then(({ data: { session } }) => {
+  if (session?.user) loadWeakVerbs();
+});
+
 </script>
 </body>
 </html>
