@@ -20,6 +20,17 @@
     --wrong: #c0464a;
     --correct-bg: #0f2a18;
     --wrong-bg: #2a0f10;
+    /* Tense color palette */
+    --t-present:   #ddd6c4;
+    --t-imparfait: #c8a87a;
+    --t-passe-c:   #a07848;
+    --t-pqp:       #7a5830;
+    --t-futur-s:   #5b9ee0;
+    --t-futur-p:   #88c0f0;
+    --t-subj-p:    #a07fd4;
+    --t-subj-pa:   #7a58b0;
+    --t-cond-p:    #e09050;
+    --t-cond-pa:   #b86828;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -32,10 +43,12 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     padding: 24px;
+    padding-top: 40px;
     position: relative;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
 
   body::before {
@@ -7672,6 +7685,20 @@ const VERB_DATA = {
   }
 } ;
 
+// ---- Tense color map ----
+const TENSE_COLORS = {
+  'Présent':              'var(--t-present)',
+  'Imparfait':            'var(--t-imparfait)',
+  'Passé composé':        'var(--t-passe-c)',
+  'Plus-que-parfait':     'var(--t-pqp)',
+  'Futur simple':         'var(--t-futur-s)',
+  'Futur proche':         'var(--t-futur-p)',
+  'Subjonctif présent':   'var(--t-subj-p)',
+  'Subjonctif passé':     'var(--t-subj-pa)',
+  'Conditionnel présent': 'var(--t-cond-p)',
+  'Conditionnel passé':   'var(--t-cond-pa)',
+};
+
 const TENSES = {
   'Présent':              { label: 'Présent' },
   'Imparfait':            { label: 'Imparfait' },
@@ -7761,7 +7788,9 @@ async function newQuestion() {
   input.disabled = false;
   input.placeholder = 'conjuguez…';
 
-  document.getElementById('tense-label').textContent = TENSES[tense].label;
+  const tenseLabelEl = document.getElementById('tense-label');
+  tenseLabelEl.textContent = TENSES[tense].label;
+  tenseLabelEl.style.color = TENSE_COLORS[tense] || 'var(--accent)';
   document.getElementById('person-label').textContent = PERSONS[pi].label;
   document.getElementById('verb-display').textContent = verb.inf;
 
@@ -7882,7 +7911,7 @@ function renderTenseChips() {
   Object.keys(TENSES).forEach(key => {
     const chip = document.createElement('div');
     chip.className = 'verb-chip' + (pendingTenses.has(key) ? ' selected' : '');
-    chip.innerHTML = `<div class="chip-check">${pendingTenses.has(key) ? '✓' : ''}</div><div class="chip-inf">${TENSES[key].label}</div>`;
+    chip.innerHTML = `<div class="chip-check">${pendingTenses.has(key) ? '✓' : ''}</div><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${TENSE_COLORS[key]||'var(--accent)'};margin-right:4px;flex-shrink:0;"></span><div class="chip-inf">${TENSES[key].label}</div>`;
     chip.addEventListener('click', () => {
       if (pendingTenses.has(key)) {
         if (pendingTenses.size === 1) return;
@@ -8239,7 +8268,7 @@ async function loadStats() {
     const tbody1 = document.getElementById('tense-stats-body');
     tbody1.innerHTML = tenseRows.map(r => `
       <tr>
-        <td>${r.name}</td>
+        <td style="color:${TENSE_COLORS[r.name]||'var(--text)'}">${r.name}</td>
         <td style="color:var(--muted)">${r.total}</td>
         <td>
           <div class="acc-bar-wrap">
@@ -8263,7 +8292,7 @@ async function loadStats() {
     const tbody2 = document.getElementById('verb-stats-body');
     tbody2.innerHTML = verbRows.map(r => `
       <tr>
-        <td>${r.name}</td>
+        <td style="color:${TENSE_COLORS[r.name]||'var(--text)'}">${r.name}</td>
         <td style="color:var(--muted)">${r.total}</td>
         <td>
           <div class="acc-bar-wrap">
@@ -8405,10 +8434,10 @@ function renderGrammar() {
   grammarRendered = true;
   const grid = document.getElementById('grammar-grid');
   grid.innerHTML = GRAMMAR_DATA.map((t, i) => `
-    <div class="grammar-card" id="gc-${i}">
+    <div class="grammar-card" id="gc-${i}" style="border-left:2px solid ${TENSE_COLORS[t.name]||'var(--accent-dim)'}">
       <div class="grammar-card-header" onclick="toggleGrammarCard(${i})">
         <div>
-          <div class="grammar-card-title">${t.name}</div>
+          <div class="grammar-card-title" style="color:${TENSE_COLORS[t.name]||'var(--accent)'}">${t.name}</div>
           <div class="grammar-card-hint">${t.hint}</div>
         </div>
         <div class="grammar-card-chevron">▼</div>
