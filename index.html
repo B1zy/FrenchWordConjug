@@ -1109,7 +1109,18 @@
 </div><!-- end container -->
 
 <script>
-const VERB_DATA = {
+// ---- Supabase Auth + Stats ----
+const SUPABASE_URL = 'https://dtoovnipewwnxpnzbter.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0b292bmlwZXd3bnhwbnpidGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMzkzMTksImV4cCI6MjA4OTkxNTMxOX0.CF3ZPjyoUyd8mRsDaJk183CTqPPh-umF1-m51QwRdMA';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ---- Verb data — loaded from Supabase, cached in localStorage ----
+const CACHE_VERSION = 'v1';
+const CACHE_PREFIX  = `conj_${CACHE_VERSION}_`;
+
+// Fallback VERB_DATA stays here so the quiz works even if Supabase is unreachable.
+// To add verbs: insert into tense_data + verb_meta in Supabase, bump CACHE_VERSION above.
+const VERB_DATA_FALLBACK = {
   "être": {
     "en": "to be",
     "aux": "avoir",
@@ -7664,6 +7675,52 @@ const VERB_DATA = {
   }
 } ;
 
+// Runtime verb data — merged as tenses load
+let VERB_DATA = {};   // { verbInf: { [tense]: [6 forms] } }
+let VERB_META  = {};  // { verbInf: { en, aux } }
+
+function mergeIntoVerbData(tense, tenseObj) {
+  // tenseObj: { verbInf: [6 forms], ... }
+  for (const [verb, forms] of Object.entries(tenseObj)) {
+    if (!VERB_DATA[verb]) VERB_DATA[verb] = {};
+    VERB_DATA[verb][tense] = forms;
+  }
+}
+
+async function fetchTense(tense) {
+  const key = CACHE_PREFIX + tense;
+  const cached = localStorage.getItem(key);
+  if (cached) {
+    mergeIntoVerbData(tense, JSON.parse(cached));
+    return;
+  }
+  const { data, error } = await sb
+    .from('tense_data')
+    .select('data')
+    .eq('tense', tense)
+    .single();
+  if (error || !data) throw new Error(`Failed to fetch tense: ${tense}`);
+  localStorage.setItem(key, JSON.stringify(data.data));
+  mergeIntoVerbData(tense, data.data);
+}
+
+async function fetchVerbMeta() {
+  const key = CACHE_PREFIX + 'verb_meta';
+  const cached = localStorage.getItem(key);
+  if (cached) {
+    VERB_META = JSON.parse(cached);
+    return;
+  }
+  const { data, error } = await sb
+    .from('verb_meta')
+    .select('verb, en, aux');
+  if (error || !data) throw new Error('Failed to fetch verb_meta');
+  VERB_META = {};
+  data.forEach(r => { VERB_META[r.verb] = { en: r.en, aux: r.aux }; });
+  localStorage.setItem(key, JSON.stringify(VERB_META));
+}
+
+
 // ---- Tense color map ----
 const TENSE_COLORS = {
   'Présent':              'var(--t-present)',
@@ -7700,8 +7757,11 @@ const PERSONS = [
   { pronoun: 'ils/elles', label: '3p' },
 ];
 
-// Build VERBS list from embedded VERB_DATA
-const VERBS = Object.entries(VERB_DATA).map(([inf, v]) => ({ inf, en: v.en, aux: v.aux }));
+// VERBS list — rebuilt after each fetch
+let VERBS = [];
+function rebuildVerbs() {
+  VERBS = Object.entries(VERB_META).map(([inf, m]) => ({ inf, en: m.en, aux: m.aux }));
+}
 
 // ---- Conjugation engine — direct lookup from VERB_DATA ----
 
@@ -7711,7 +7771,10 @@ function getConjugation(verbInf, tense, pi) {
   if (tense === 'Futur proche') {
     return ALLER_PRESENT[pi] + ' ' + verbInf;
   }
-  const v = VERB_DATA[verbInf];
+  // Try loaded data first, fall back to hardcoded
+  const v = (VERB_DATA[verbInf] && VERB_DATA[verbInf][tense])
+    ? VERB_DATA[verbInf]
+    : VERB_DATA_FALLBACK[verbInf];
   if (!v) return null;
   const forms = v[tense];
   if (!forms) return null;
@@ -7723,10 +7786,47 @@ function getCachedAnswer(verbInf, tense, pi) {
 }
 
 async function prefetchAll() {
-  // Instant — everything is already in VERB_DATA
-  document.getElementById('loading-bar-fill').style.width = '100%';
-  document.getElementById('loading-status').textContent = 'Prêt !';
-  await new Promise(r => setTimeout(r, 200));
+  const statusEl  = document.getElementById('loading-status');
+  const barEl     = document.getElementById('loading-bar-fill');
+  const tenseList = [...activeTenses];
+  const total     = tenseList.length + 1; // +1 for verb_meta
+  let   done      = 0;
+
+  const tick = (msg) => {
+    done++;
+    barEl.style.width = Math.round(done / total * 100) + '%';
+    statusEl.textContent = msg;
+  };
+
+  try {
+    // Fetch verb meta first (needed to build VERBS list)
+    await fetchVerbMeta();
+    rebuildVerbs();
+    tick('Verbs loaded…');
+
+    // Fetch each active tense (parallelised)
+    await Promise.all(tenseList.map(async tense => {
+      await fetchTense(tense);
+      tick(tense + ' loaded…');
+    }));
+
+    statusEl.textContent = 'Ready!';
+  } catch(e) {
+    console.warn('Supabase fetch failed, using fallback data:', e);
+    // Fall back: populate VERB_DATA and VERB_META from hardcoded data
+    VERB_META = {};
+    for (const [verb, data] of Object.entries(VERB_DATA_FALLBACK)) {
+      VERB_META[verb] = { en: data.en, aux: data.aux };
+      if (!VERB_DATA[verb]) VERB_DATA[verb] = {};
+      for (const tense of tenseList) {
+        if (data[tense]) VERB_DATA[verb][tense] = data[tense];
+      }
+    }
+    rebuildVerbs();
+    barEl.style.width = '100%';
+    statusEl.textContent = 'Ready (offline)';
+  }
+  await new Promise(r => setTimeout(r, 300));
 }
 
 
@@ -7937,10 +8037,31 @@ document.getElementById('tense-none-btn').addEventListener('click', () => {
   renderTenseChips();
 });
 
-document.getElementById('apply-tenses').addEventListener('click', () => {
+document.getElementById('apply-tenses').addEventListener('click', async () => {
+  const toFetch = [...pendingTenses].filter(t =>
+    !Object.values(VERB_DATA).some(v => v[t])
+  );
   activeTenses = new Set(pendingTenses);
   closeTensePicker();
   updateTenseBtn();
+  if (toFetch.length > 0) {
+    document.getElementById('loading-status').textContent = 'Loading…';
+    document.getElementById('loading-overlay').classList.remove('hidden');
+    document.getElementById('loading-overlay').style.display = '';
+    try {
+      await Promise.all(toFetch.map(fetchTense));
+    } catch(e) {
+      console.warn('Tense fetch failed, using fallback:', e);
+      for (const tense of toFetch) {
+        for (const [verb, data] of Object.entries(VERB_DATA_FALLBACK)) {
+          if (!VERB_DATA[verb]) VERB_DATA[verb] = {};
+          if (data[tense]) VERB_DATA[verb][tense] = data[tense];
+        }
+      }
+    }
+    document.getElementById('loading-overlay').classList.add('hidden');
+    setTimeout(() => document.getElementById('loading-overlay').style.display = 'none', 400);
+  }
   newQuestion();
 });
 
@@ -7962,7 +8083,7 @@ document.getElementById('answer-input').addEventListener('keydown', e => {
 document.getElementById('next-btn').addEventListener('click', newQuestion);
 
 // ---- Verb Picker ----
-let activeVerbs = new Set(VERBS.map(v => v.inf)); // all on by default
+let activeVerbs = new Set(); // filled after prefetchAll
 let pendingVerbs = new Set(activeVerbs); // selection in modal before apply
 
 function openVerbPicker() {
@@ -8045,10 +8166,6 @@ document.getElementById('apply-verbs').addEventListener('click', () => {
   newQuestion();
 });
 
-// ---- Supabase Auth + Stats ----
-const SUPABASE_URL = 'https://dtoovnipewwnxpnzbter.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0b292bmlwZXd3bnhwbnpidGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMzkzMTksImV4cCI6MjA4OTkxNTMxOX0.CF3ZPjyoUyd8mRsDaJk183CTqPPh-umF1-m51QwRdMA';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentUser = null;
 
@@ -8125,6 +8242,8 @@ async function syncStat(verb, tense, isCorrect) {
   } catch(e) {
     console.error('Startup error:', e);
   }
+  // Now VERBS is populated — initialize activeVerbs
+  activeVerbs = new Set(VERBS.map(v => v.inf));
   const overlay = document.getElementById('loading-overlay');
   overlay.classList.add('hidden');
   setTimeout(() => overlay.style.display = 'none', 500);
