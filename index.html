@@ -1085,16 +1085,16 @@
         </div>
       </div>
       <div class="stats-section">
-        <div class="stats-title">Par temps — du plus faible au plus fort</div>
+        <div class="stats-title">By tense</div>
         <table class="stats-table" id="tense-stats-table">
-          <thead><tr><th style="width:45%">Tense</th><th style="width:15%;text-align:right">Ans</th><th style="width:40%">Accuracy</th></tr></thead>
+          <thead><tr><th style="width:45%;cursor:pointer;user-select:none" onclick="sortStats('tense','name')"><span id="th-tense-name">Tense</span> <span id="si-tense-name" style="font-size:0.6rem;color:var(--muted)"></span></th><th style="width:15%;text-align:right;cursor:pointer;user-select:none" onclick="sortStats('tense','total')"><span id="th-tense-total">Ans</span> <span id="si-tense-total" style="font-size:0.6rem;color:var(--muted)"></span></th><th style="width:40%;cursor:pointer;user-select:none" onclick="sortStats('tense','acc')"><span id="th-tense-acc">Accuracy</span> <span id="si-tense-acc" style="font-size:0.6rem;color:var(--muted)">▲</span></th></tr></thead>
           <tbody id="tense-stats-body"></tbody>
         </table>
       </div>
       <div class="stats-section">
-        <div class="stats-title">Par verbe — du plus faible au plus fort</div>
+        <div class="stats-title">By verb</div>
         <table class="stats-table" id="verb-stats-table">
-          <thead><tr><th style="width:45%">Verb</th><th style="width:15%;text-align:right">Ans</th><th style="width:40%">Accuracy</th></tr></thead>
+          <thead><tr><th style="width:45%;cursor:pointer;user-select:none" onclick="sortStats('verb','name')"><span id="th-verb-name">Verb</span> <span id="si-verb-name" style="font-size:0.6rem;color:var(--muted)"></span></th><th style="width:15%;text-align:right;cursor:pointer;user-select:none" onclick="sortStats('verb','total')"><span id="th-verb-total">Ans</span> <span id="si-verb-total" style="font-size:0.6rem;color:var(--muted)"></span></th><th style="width:40%;cursor:pointer;user-select:none" onclick="sortStats('verb','acc')"><span id="th-verb-acc">Accuracy</span> <span id="si-verb-acc" style="font-size:0.6rem;color:var(--muted)">▲</span></th></tr></thead>
           <tbody id="verb-stats-body"></tbody>
         </table>
       </div>
@@ -8201,6 +8201,81 @@ async function loadWeakVerbs() {
 // ============================================================
 let statsLoaded = false;
 
+// ---- Sortable stats ----
+let statsRowsTense = [];
+let statsRowsVerb  = [];
+let sortState = {
+  tense: { col: 'acc', asc: true },
+  verb:  { col: 'acc', asc: true },
+};
+
+function renderStatsTense() {
+  const { col, asc } = sortState.tense;
+  const rows = [...statsRowsTense].sort((a, b) => {
+    const av = a[col], bv = b[col];
+    return asc
+      ? (typeof av === 'string' ? av.localeCompare(bv) : av - bv)
+      : (typeof av === 'string' ? bv.localeCompare(av) : bv - av);
+  });
+  // Update header indicators
+  ['name','total','acc'].forEach(c => {
+    const el = document.getElementById('si-tense-' + c);
+    if (el) el.textContent = c === col ? (asc ? '▲' : '▼') : '';
+  });
+  document.getElementById('tense-stats-body').innerHTML = rows.map(r => `
+    <tr>
+      <td style="color:${TENSE_COLORS[r.name]||'var(--text)'}">${r.name}</td>
+      <td style="color:var(--muted);text-align:right;padding-right:12px">${r.total}</td>
+      <td style="padding-left:4px">
+        <div style="display:flex;align-items:center;gap:8px;width:100%">
+          <div style="flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;min-width:40px">
+            <div style="width:${r.acc}%;height:100%;background:${r.acc < 50 ? 'var(--wrong)' : r.acc < 75 ? 'var(--accent)' : 'var(--correct)'};border-radius:2px"></div>
+          </div>
+          <span style="color:${r.acc < 50 ? 'var(--wrong)' : r.acc < 75 ? 'var(--accent)' : 'var(--correct)'};font-size:0.72rem;min-width:32px;text-align:right;flex-shrink:0">${r.acc}%</span>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+function renderStatsVerb() {
+  const { col, asc } = sortState.verb;
+  const rows = [...statsRowsVerb].sort((a, b) => {
+    const av = a[col], bv = b[col];
+    return asc
+      ? (typeof av === 'string' ? av.localeCompare(bv, 'fr') : av - bv)
+      : (typeof av === 'string' ? bv.localeCompare(av, 'fr') : bv - av);
+  });
+  ['name','total','acc'].forEach(c => {
+    const el = document.getElementById('si-verb-' + c);
+    if (el) el.textContent = c === col ? (asc ? '▲' : '▼') : '';
+  });
+  document.getElementById('verb-stats-body').innerHTML = rows.map(r => `
+    <tr>
+      <td>${r.name}</td>
+      <td style="color:var(--muted);text-align:right;padding-right:12px">${r.total}</td>
+      <td style="padding-left:4px">
+        <div style="display:flex;align-items:center;gap:8px;width:100%">
+          <div style="flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;min-width:40px">
+            <div style="width:${r.acc}%;height:100%;background:${r.acc < 50 ? 'var(--wrong)' : r.acc < 75 ? 'var(--accent)' : 'var(--correct)'};border-radius:2px"></div>
+          </div>
+          <span style="color:${r.acc < 50 ? 'var(--wrong)' : r.acc < 75 ? 'var(--accent)' : 'var(--correct)'};font-size:0.72rem;min-width:32px;text-align:right;flex-shrink:0">${r.acc}%</span>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+function sortStats(table, col) {
+  const s = sortState[table];
+  if (s.col === col) {
+    s.asc = !s.asc;
+  } else {
+    s.col = col;
+    s.asc = col === 'name'; // alpha sorts asc by default, numbers desc
+  }
+  if (table === 'tense') renderStatsTense();
+  else renderStatsVerb();
+}
+
 async function loadStats() {
   if (!currentUser) {
     document.getElementById('stats-signin-msg').style.display = 'block';
@@ -8233,57 +8308,30 @@ async function loadStats() {
     document.getElementById('stat-streak').textContent = bestStreak || '—';
     document.getElementById('stat-verbs-count').textContent = verbsCount;
 
-    // Tense stats
+    // Build tense rows
     const tenseMap = {};
     data.forEach(r => {
       if (!tenseMap[r.tense]) tenseMap[r.tense] = { correct: 0, total: 0 };
       tenseMap[r.tense].correct += r.correct;
       tenseMap[r.tense].total += r.total;
     });
-    const tenseRows = Object.entries(tenseMap)
-      .map(([t, v]) => ({ name: t, acc: Math.round(v.correct / v.total * 100), total: v.total }))
-      .sort((a, b) => a.acc - b.acc);
+    statsRowsTense = Object.entries(tenseMap)
+      .map(([t, v]) => ({ name: t, acc: Math.round(v.correct / v.total * 100), total: v.total }));
 
-    const tbody1 = document.getElementById('tense-stats-body');
-    tbody1.innerHTML = tenseRows.map(r => `
-      <tr>
-        <td style="color:${TENSE_COLORS[r.name]||'var(--text)'}">${r.name}</td>
-        <td style="color:var(--muted);text-align:right;padding-right:12px">${r.total}</td>
-        <td style="padding-left:4px">
-          <div style="display:flex;align-items:center;gap:8px;width:100%">
-            <div style="flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;min-width:40px">
-              <div style="width:${r.acc}%;height:100%;background:${r.acc < 50 ? 'var(--wrong)' : r.acc < 75 ? 'var(--accent)' : 'var(--correct)'};border-radius:2px"></div>
-            </div>
-            <span style="color:${r.acc < 50 ? 'var(--wrong)' : r.acc < 75 ? 'var(--accent)' : 'var(--correct)'};font-size:0.72rem;min-width:32px;text-align:right;flex-shrink:0">${r.acc}%</span>
-          </div>
-        </td>
-      </tr>`).join('');
-
-    // Verb stats
+    // Build verb rows
     const verbMap = {};
     data.forEach(r => {
       if (!verbMap[r.verb]) verbMap[r.verb] = { correct: 0, total: 0 };
       verbMap[r.verb].correct += r.correct;
       verbMap[r.verb].total += r.total;
     });
-    const verbRows = Object.entries(verbMap)
-      .map(([v, d]) => ({ name: v, acc: Math.round(d.correct / d.total * 100), total: d.total }))
-      .sort((a, b) => a.acc - b.acc);
+    statsRowsVerb = Object.entries(verbMap)
+      .map(([v, d]) => ({ name: v, acc: Math.round(d.correct / d.total * 100), total: d.total }));
 
-    const tbody2 = document.getElementById('verb-stats-body');
-    tbody2.innerHTML = verbRows.map(r => `
-      <tr>
-        <td>${r.name}</td>
-        <td style="color:var(--muted);text-align:right;padding-right:12px">${r.total}</td>
-        <td style="padding-left:4px">
-          <div style="display:flex;align-items:center;gap:8px;width:100%">
-            <div style="flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;min-width:40px">
-              <div style="width:${r.acc}%;height:100%;background:${r.acc < 50 ? 'var(--wrong)' : r.acc < 75 ? 'var(--accent)' : 'var(--correct)'};border-radius:2px"></div>
-            </div>
-            <span style="color:${r.acc < 50 ? 'var(--wrong)' : r.acc < 75 ? 'var(--accent)' : 'var(--correct)'};font-size:0.72rem;min-width:32px;text-align:right;flex-shrink:0">${r.acc}%</span>
-          </div>
-        </td>
-      </tr>`).join('');
+    // Reset sort to default (accuracy asc = worst first)
+    sortState = { tense: { col: 'acc', asc: true }, verb: { col: 'acc', asc: true } };
+    renderStatsTense();
+    renderStatsVerb();
 
     document.getElementById('stats-loading').style.display = 'none';
     document.getElementById('stats-content').style.display = 'block';
