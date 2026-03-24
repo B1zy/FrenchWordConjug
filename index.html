@@ -722,16 +722,18 @@
     color: var(--text);
     vertical-align: middle;
   }
-  .stats-table td:last-child { text-align: right; }
-  .acc-bar-wrap { display: flex; align-items: center; gap: 10px; justify-content: flex-end; }
+  .stats-table td:last-child { width: 45%; min-width: 120px; }
+  .acc-bar-wrap { display: flex; align-items: center; gap: 10px; }
   .acc-bar {
-    width: 60px; height: 3px;
+    flex: 1;
+    height: 4px;
     background: var(--border);
     border-radius: 2px;
     overflow: hidden;
-    flex-shrink: 0;
+    min-width: 60px;
   }
-  .acc-bar-fill { height: 100%; border-radius: 2px; transition: width 0.4s ease; }
+  .acc-bar-fill { height: 100%; border-radius: 2px; transition: width 0.6s ease; }
+  .acc-pct { font-size: 0.72rem; min-width: 36px; text-align: right; flex-shrink: 0; }
   .stats-signin-msg {
     text-align: center;
     color: var(--muted);
@@ -889,32 +891,9 @@
     margin-top: 28px;
   }
 
-  .stats-table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-  .stats-table td {
-    padding: 8px 4px;
-    font-size: 0.78rem;
-    border-bottom: 1px solid var(--border);
-    vertical-align: middle;
-  }
-  .stats-table td:first-child { color: var(--text); width: 40%; }
-  .stats-table td:last-child { text-align: right; color: var(--muted); font-size: 0.7rem; }
 
-  .acc-bar-wrap {
-    height: 4px;
-    background: var(--border);
-    border-radius: 2px;
-    overflow: hidden;
-    width: 100%;
-    margin-top: 4px;
-  }
-  .acc-bar-fill {
-    height: 100%;
-    border-radius: 2px;
-    transition: width 0.4s ease;
-  }
+
+
 
   .stats-login-msg {
     text-align: center;
@@ -1099,23 +1078,23 @@
       <div class="stats-section">
         <div class="stats-title">Vue d'ensemble</div>
         <div class="stats-overview">
-          <div class="stat-box"><div class="stat-box-label">Total réponses</div><div class="stat-box-value" id="stat-total">—</div></div>
-          <div class="stat-box"><div class="stat-box-label">Précision globale</div><div class="stat-box-value" id="stat-accuracy">—</div></div>
-          <div class="stat-box"><div class="stat-box-label">Meilleur streak</div><div class="stat-box-value" id="stat-streak">—</div></div>
-          <div class="stat-box"><div class="stat-box-label">Verbes pratiqués</div><div class="stat-box-value" id="stat-verbs-count">—</div></div>
+          <div class="stat-box"><div class="stat-box-label">Total answers</div><div class="stat-box-value" id="stat-total">—</div></div>
+          <div class="stat-box"><div class="stat-box-label">Global accuracy</div><div class="stat-box-value" id="stat-accuracy">—</div></div>
+          <div class="stat-box"><div class="stat-box-label">Best streak</div><div class="stat-box-value" id="stat-streak">—</div></div>
+          <div class="stat-box"><div class="stat-box-label">Verbs practised</div><div class="stat-box-value" id="stat-verbs-count">—</div></div>
         </div>
       </div>
       <div class="stats-section">
         <div class="stats-title">Par temps — du plus faible au plus fort</div>
         <table class="stats-table" id="tense-stats-table">
-          <thead><tr><th>Temps</th><th>Réponses</th><th>Précision</th></tr></thead>
+          <thead><tr><th style="width:45%">Tense</th><th style="width:15%;text-align:right">Ans</th><th style="width:40%">Accuracy</th></tr></thead>
           <tbody id="tense-stats-body"></tbody>
         </table>
       </div>
       <div class="stats-section">
         <div class="stats-title">Par verbe — du plus faible au plus fort</div>
         <table class="stats-table" id="verb-stats-table">
-          <thead><tr><th>Verbe</th><th>Réponses</th><th>Précision</th></tr></thead>
+          <thead><tr><th style="width:45%">Verb</th><th style="width:15%;text-align:right">Ans</th><th style="width:40%">Accuracy</th></tr></thead>
           <tbody id="verb-stats-body"></tbody>
         </table>
       </div>
@@ -8239,7 +8218,7 @@ async function loadStats() {
       .eq('user_id', currentUser.id);
 
     if (!data || data.length === 0) {
-      document.getElementById('stats-loading').textContent = 'Pas encore de données. Réponds à quelques questions !';
+      document.getElementById('stats-loading').textContent = 'No data yet — answer some questions first!';
       return;
     }
 
@@ -8269,11 +8248,13 @@ async function loadStats() {
     tbody1.innerHTML = tenseRows.map(r => `
       <tr>
         <td style="color:${TENSE_COLORS[r.name]||'var(--text)'}">${r.name}</td>
-        <td style="color:var(--muted)">${r.total}</td>
-        <td>
-          <div class="acc-bar-wrap">
-            <span style="color:${r.acc < 50 ? 'var(--wrong)' : r.acc < 75 ? 'var(--accent)' : 'var(--correct)'}">${r.acc}%</span>
-            <div class="acc-bar"><div class="acc-bar-fill" style="width:${r.acc}%;background:${r.acc < 50 ? 'var(--wrong)' : r.acc < 75 ? 'var(--accent)' : 'var(--correct)'}"></div></div>
+        <td style="color:var(--muted);text-align:right;padding-right:12px">${r.total}</td>
+        <td style="padding-left:4px">
+          <div style="display:flex;align-items:center;gap:8px;width:100%">
+            <div style="flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;min-width:40px">
+              <div style="width:${r.acc}%;height:100%;background:${r.acc < 50 ? 'var(--wrong)' : r.acc < 75 ? 'var(--accent)' : 'var(--correct)'};border-radius:2px"></div>
+            </div>
+            <span style="color:${r.acc < 50 ? 'var(--wrong)' : r.acc < 75 ? 'var(--accent)' : 'var(--correct)'};font-size:0.72rem;min-width:32px;text-align:right;flex-shrink:0">${r.acc}%</span>
           </div>
         </td>
       </tr>`).join('');
@@ -8292,12 +8273,14 @@ async function loadStats() {
     const tbody2 = document.getElementById('verb-stats-body');
     tbody2.innerHTML = verbRows.map(r => `
       <tr>
-        <td style="color:${TENSE_COLORS[r.name]||'var(--text)'}">${r.name}</td>
-        <td style="color:var(--muted)">${r.total}</td>
-        <td>
-          <div class="acc-bar-wrap">
-            <span style="color:${r.acc < 50 ? 'var(--wrong)' : r.acc < 75 ? 'var(--accent)' : 'var(--correct)'}">${r.acc}%</span>
-            <div class="acc-bar"><div class="acc-bar-fill" style="width:${r.acc}%;background:${r.acc < 50 ? 'var(--wrong)' : r.acc < 75 ? 'var(--accent)' : 'var(--correct)'}"></div></div>
+        <td>${r.name}</td>
+        <td style="color:var(--muted);text-align:right;padding-right:12px">${r.total}</td>
+        <td style="padding-left:4px">
+          <div style="display:flex;align-items:center;gap:8px;width:100%">
+            <div style="flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;min-width:40px">
+              <div style="width:${r.acc}%;height:100%;background:${r.acc < 50 ? 'var(--wrong)' : r.acc < 75 ? 'var(--accent)' : 'var(--correct)'};border-radius:2px"></div>
+            </div>
+            <span style="color:${r.acc < 50 ? 'var(--wrong)' : r.acc < 75 ? 'var(--accent)' : 'var(--correct)'};font-size:0.72rem;min-width:32px;text-align:right;flex-shrink:0">${r.acc}%</span>
           </div>
         </td>
       </tr>`).join('');
@@ -8307,7 +8290,7 @@ async function loadStats() {
     statsLoaded = true;
   } catch(e) {
     console.error('loadStats failed', e);
-    document.getElementById('stats-loading').textContent = 'Erreur lors du chargement.';
+    document.getElementById('stats-loading').textContent = 'Failed to load stats.';
   }
 }
 
@@ -8317,9 +8300,9 @@ async function loadStats() {
 const GRAMMAR_DATA = [
   {
     name: 'Présent',
-    hint: 'Actions actuelles, habitudes, vérités générales',
-    formation: '<em>-er</em> : parle / parles / parle / parlons / parlez / parlent<br><em>-ir</em> : finis / finis / finit / finissons / finissez / finissent<br><em>-re</em> : vends / vends / vend / vendons / vendez / vendent',
-    usage: 'Décrit ce qui se passe maintenant, des habitudes régulières, ou des faits permanents.',
+    hint: 'Current actions, habits, general truths',
+    formation: '<em>-er:</em> parle / parles / parle / parlons / parlez / parlent<br><em>-ir:</em> finis / finis / finit / finissons / finissez / finissent<br><em>-re:</em> vends / vends / vend / vendons / vendez / vendent',
+    usage: 'Describes what is happening now, regular habits, or permanent facts. Also used for near-future events in spoken French.',
     examples: [
       { fr: 'Je parle français.', en: 'I speak French.' },
       { fr: 'Elle travaille tous les jours.', en: 'She works every day.' },
@@ -8328,9 +8311,9 @@ const GRAMMAR_DATA = [
   },
   {
     name: 'Imparfait',
-    hint: 'Descriptions passées, actions répétées ou continues',
-    formation: 'Radical de la 1ère personne du pluriel au présent + <em>-ais / -ais / -ait / -ions / -iez / -aient</em>',
-    usage: 'Décrit des états ou actions habituels dans le passé, le décor d\'une histoire, ou une action interrompue par une autre.',
+    hint: 'Past descriptions, repeated/ongoing past actions',
+    formation: 'Take the <em>nous</em> present stem + <em>-ais / -ais / -ait / -ions / -iez / -aient</em>',
+    usage: 'Describes states, settings, or habitual actions in the past ("used to / was doing"). Contrasts with passé composé: imparfait = background, passé composé = event.',
     examples: [
       { fr: 'Quand j\'étais enfant, je jouais au foot.', en: 'When I was a child, I used to play football.' },
       { fr: 'Il pleuvait ce matin-là.', en: 'It was raining that morning.' },
@@ -8339,9 +8322,9 @@ const GRAMMAR_DATA = [
   },
   {
     name: 'Passé composé',
-    hint: 'Actions passées terminées',
-    formation: '<em>avoir</em> ou <em>être</em> au présent + participe passé<br>Verbes DR MRS VANDERTRAMP → être',
-    usage: 'Décrit des actions passées et terminées, souvent avec un début ou une fin précise. Contraste avec l\'imparfait.',
+    hint: 'Completed past actions',
+    formation: '<em>avoir</em> or <em>être</em> (present) + past participle<br>DR MRS VANDERTRAMP verbs + reflexives → use être (agree with subject)<br>-er → é · -ir → i · -re → u · irregulars: fait, pris, mis, dit, vu…',
+    usage: 'Describes finished past actions, often with a clear start or end. The main "storytelling" tense alongside imparfait.',
     examples: [
       { fr: 'J\'ai mangé une pomme.', en: 'I ate / have eaten an apple.' },
       { fr: 'Elle est partie hier.', en: 'She left yesterday.' },
@@ -8349,10 +8332,21 @@ const GRAMMAR_DATA = [
     ]
   },
   {
+    name: 'Plus-que-parfait',
+    hint: 'Action that happened before another past action',
+    formation: '<em>avoir</em> or <em>être</em> (imparfait) + past participle',
+    usage: 'Equivalent to English past perfect ("had done"). Used when one past event preceded another.',
+    examples: [
+      { fr: 'Il avait déjà mangé quand je suis arrivé.', en: 'He had already eaten when I arrived.' },
+      { fr: 'Elle était partie avant la pluie.', en: 'She had left before the rain.' },
+      { fr: 'Nous avions fini quand tu as appelé.', en: 'We had finished when you called.' },
+    ]
+  },
+  {
     name: 'Futur simple',
-    hint: 'Actions futures certaines ou planifiées',
-    formation: 'Infinitif (sans le -e final pour -re) + <em>-ai / -as / -a / -ons / -ez / -ont</em>',
-    usage: 'Exprime des événements futurs. Pour les irréguliers : être → ser-, avoir → aur-, aller → ir-, faire → fer-…',
+    hint: 'Definite future actions',
+    formation: 'Infinitive (drop final -e for -re verbs) + <em>-ai / -as / -a / -ons / -ez / -ont</em><br>Key irregulars: être → ser- · avoir → aur- · aller → ir- · faire → fer- · pouvoir → pourr- · vouloir → voudr-',
+    usage: 'Expresses future events, predictions, or promises. More formal than futur proche.',
     examples: [
       { fr: 'Je parlerai demain.', en: 'I will speak tomorrow.' },
       { fr: 'Nous irons en France l\'été prochain.', en: 'We will go to France next summer.' },
@@ -8361,9 +8355,9 @@ const GRAMMAR_DATA = [
   },
   {
     name: 'Futur proche',
-    hint: 'Intentions immédiates ou plans concrets',
-    formation: '<em>aller</em> au présent + infinitif',
-    usage: 'Exprime une intention ou un événement imminent. Plus informel que le futur simple.',
+    hint: 'Immediate intentions or near-future plans',
+    formation: '<em>aller</em> (present) + infinitive',
+    usage: 'Expresses something about to happen or a concrete plan. More common in spoken French than futur simple.',
     examples: [
       { fr: 'Je vais manger.', en: 'I\'m going to eat.' },
       { fr: 'Elle va partir dans cinq minutes.', en: 'She\'s going to leave in five minutes.' },
@@ -8371,21 +8365,10 @@ const GRAMMAR_DATA = [
     ]
   },
   {
-    name: 'Plus-que-parfait',
-    hint: 'Actions antérieures à un autre événement passé',
-    formation: '<em>avoir</em> ou <em>être</em> à l\'imparfait + participe passé',
-    usage: 'Décrit une action qui s\'est produite avant une autre action passée. Équivalent du past perfect anglais.',
-    examples: [
-      { fr: 'Il avait déjà mangé quand je suis arrivé.', en: 'He had already eaten when I arrived.' },
-      { fr: 'Elle était partie avant la pluie.', en: 'She had left before the rain.' },
-      { fr: 'Nous avions fini quand tu as appelé.', en: 'We had finished when you called.' },
-    ]
-  },
-  {
     name: 'Subjonctif présent',
-    hint: 'Doute, volonté, émotion — après "que"',
-    formation: 'Radical de la 3ème personne du pluriel au présent + <em>-e / -es / -e / -ions / -iez / -ent</em>',
-    usage: 'Utilisé après des expressions de volonté, d\'émotion, de doute, de nécessité : <em>il faut que, je veux que, bien que, pour que…</em>',
+    hint: 'Doubt, will, emotion — always after "que"',
+    formation: 'Take the <em>ils</em> present stem + <em>-e / -es / -e / -ions / -iez / -ent</em><br>Key irregulars: être → soi- · avoir → aie/ait · aller → aill- · faire → fass-',
+    usage: 'Used after expressions of wish, emotion, doubt, or necessity: <em>il faut que, je veux que, bien que, pour que, à moins que…</em>',
     examples: [
       { fr: 'Il faut que tu parles.', en: 'You need to speak.' },
       { fr: 'Je veux qu\'il vienne.', en: 'I want him to come.' },
@@ -8394,9 +8377,9 @@ const GRAMMAR_DATA = [
   },
   {
     name: 'Subjonctif passé',
-    hint: 'Subjonctif d\'une action antérieure',
-    formation: '<em>avoir</em> ou <em>être</em> au subjonctif présent + participe passé',
-    usage: 'Utilisé quand l\'action subordonnée est antérieure à l\'action principale — dans les mêmes contextes que le subjonctif présent.',
+    hint: 'Subjunctive of a completed action',
+    formation: '<em>avoir</em> or <em>être</em> (subjonctif présent) + past participle',
+    usage: 'Used when the subordinate action happened before the main clause. Same triggers as subjonctif présent — the action is just earlier.',
     examples: [
       { fr: 'Je suis content qu\'il soit venu.', en: 'I\'m glad he came.' },
       { fr: 'Il est possible qu\'elle ait oublié.', en: 'It\'s possible she forgot.' },
@@ -8405,9 +8388,9 @@ const GRAMMAR_DATA = [
   },
   {
     name: 'Conditionnel présent',
-    hint: 'Hypothèses, politesse, irréel du présent',
-    formation: 'Infinitif (même base que futur simple) + <em>-ais / -ais / -ait / -ions / -iez / -aient</em>',
-    usage: 'Exprime des hypothèses (<em>si + imparfait → conditionnel présent</em>), des souhaits, ou des demandes polies.',
+    hint: 'Hypotheticals, polite requests, "would"',
+    formation: 'Same stem as futur simple + <em>-ais / -ais / -ait / -ions / -iez / -aient</em>',
+    usage: 'Expresses hypotheticals (<em>si + imparfait → conditionnel présent</em>), polite requests, or wishes. English equivalent: "would".',
     examples: [
       { fr: 'Si j\'avais le temps, je lirais plus.', en: 'If I had the time, I would read more.' },
       { fr: 'Je voudrais un café.', en: 'I would like a coffee.' },
@@ -8416,9 +8399,9 @@ const GRAMMAR_DATA = [
   },
   {
     name: 'Conditionnel passé',
-    hint: 'Hypothèses sur le passé, regrets',
-    formation: '<em>avoir</em> ou <em>être</em> au conditionnel présent + participe passé',
-    usage: 'Exprime ce qui <em>aurait pu</em> se passer (<em>si + plus-que-parfait → conditionnel passé</em>), des regrets.',
+    hint: 'Hypotheticals about the past, regrets, "would have"',
+    formation: '<em>avoir</em> or <em>être</em> (conditionnel présent) + past participle',
+    usage: 'Expresses what would have happened (<em>si + plus-que-parfait → conditionnel passé</em>). English equivalent: "would have".',
     examples: [
       { fr: 'Si j\'avais su, j\'aurais agi.', en: 'If I had known, I would have acted.' },
       { fr: 'Elle serait venue si elle avait pu.', en: 'She would have come if she could have.' },
@@ -8444,15 +8427,15 @@ function renderGrammar() {
       </div>
       <div class="grammar-card-body">
         <div class="grammar-section">
-          <div class="grammar-section-label">Utilisation</div>
+          <div class="grammar-section-label">When to use</div>
           <div class="grammar-section-text">${t.usage}</div>
         </div>
         <div class="grammar-section">
-          <div class="grammar-section-label">Formation</div>
+          <div class="grammar-section-label">How to form</div>
           <div class="grammar-section-text">${t.formation}</div>
         </div>
         <div class="grammar-section">
-          <div class="grammar-section-label">Exemples</div>
+          <div class="grammar-section-label">Examples</div>
           <div class="grammar-examples">
             ${t.examples.map(e => `
               <div class="grammar-example">
