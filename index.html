@@ -7918,7 +7918,13 @@ let current = null;
 let state = 'loading';
 
 // ---- Shuffle bags — no repeats until the full set has been seen ----
-const _bags = { tense: [], verb: [], pi: [] };
+const _bags = { tense: [], pi: [] };
+
+// ---- Verb cooldown system ----
+// After a verb is drawn it gets a 30% weight for the next VERB_COOLDOWN draws
+const VERB_COOLDOWN = 20;
+const _verbCooldown = new Map(); // verbInf -> drawsRemaining
+let   _verbDrawCount = 0;
 
 function shuffled(arr) {
   const a = [...arr];
@@ -7932,7 +7938,6 @@ function shuffled(arr) {
 function drawFrom(bag, pool) {
   if (bag.length === 0) {
     const next = shuffled(pool);
-    // avoid starting with the same item the previous bag ended on
     if (next[0] === bag._last && next.length > 1) {
       const swap = Math.floor(Math.random() * (next.length - 1)) + 1;
       [next[0], next[swap]] = [next[swap], next[0]];
@@ -7944,15 +7949,42 @@ function drawFrom(bag, pool) {
   return item;
 }
 
+function drawVerb(pool) {
+  // Tick down all cooldowns
+  _verbDrawCount++;
+  for (const [v, remaining] of _verbCooldown) {
+    if (remaining <= 1) _verbCooldown.delete(v);
+    else _verbCooldown.set(v, remaining - 1);
+  }
+
+  if (pool.length === 0) return null;
+  if (pool.length === 1) return pool[0];
+
+  // Build weighted pool — hot verbs get 0.3x weight
+  const weights = pool.map(v => _verbCooldown.has(v.inf) ? 0.3 : 1.0);
+  const total   = weights.reduce((s, w) => s + w, 0);
+  let   rand    = Math.random() * total;
+
+  let chosen = pool[pool.length - 1]; // fallback
+  for (let i = 0; i < pool.length; i++) {
+    rand -= weights[i];
+    if (rand <= 0) { chosen = pool[i]; break; }
+  }
+
+  // Put chosen on cooldown
+  _verbCooldown.set(chosen.inf, VERB_COOLDOWN);
+  return chosen;
+}
+
 function pickRandom() {
   const tensePool = [...activeTenses];
   let verbPool = VERBS.filter(v => activeVerbs.has(v.inf));
   if (irregMode) verbPool = verbPool.filter(v => IRREGULAR_VERBS.has(v.inf));
   if (verbPool.length === 0) verbPool = VERBS.filter(v => activeVerbs.has(v.inf));
-  const piPool    = [0, 1, 2, 3, 4, 5];
+  const piPool = [0, 1, 2, 3, 4, 5];
 
   const tense = drawFrom(_bags.tense, tensePool);
-  const verb  = drawFrom(_bags.verb,  verbPool);
+  const verb  = drawVerb(verbPool);
   const pi    = drawFrom(_bags.pi,    piPool);
   return { tense, verb, pi };
 }
@@ -8150,7 +8182,7 @@ document.getElementById('apply-tenses').addEventListener('click', async () => {
     !Object.values(VERB_DATA).some(v => v[t])
   );
   activeTenses = new Set(pendingTenses);
-  _bags.tense = []; _bags.verb = []; _bags.pi = [];
+  _bags.tense = []; _bags.pi = []; _verbCooldown.clear();
   closeTensePicker();
   updateTenseBtn();
   if (toFetch.length > 0) {
@@ -8421,7 +8453,7 @@ document.getElementById('weak-toggle').addEventListener('click', () => {
     const verbBtn = document.getElementById('open-verb-picker');
     verbBtn.textContent = 'Verbes ▾';
   }
-  _bags.tense = []; _bags.verb = []; _bags.pi = [];
+  _bags.tense = []; _bags.pi = []; _verbCooldown.clear();
   updateWeakToggle();
   newQuestion();
 });
@@ -8430,7 +8462,7 @@ document.getElementById('irregular-toggle').addEventListener('click', () => {
   irregMode = !irregMode;
   if (irregMode) weakModeOn = false;
   document.getElementById('irregular-toggle').classList.toggle('active', irregMode);
-  _bags.tense = []; _bags.verb = []; _bags.pi = [];
+  _bags.tense = []; _bags.pi = []; _verbCooldown.clear();
   newQuestion();
 });
 
@@ -8473,16 +8505,18 @@ function renderStatsTense() {
     if (el) el.textContent = c === col ? (asc ? '▲' : '▼') : '';
   });
   document.getElementById('tense-stats-body').innerHTML = rows.map(r => `
-    <tr>
+    <tr style="${r.total === 0 ? 'opacity:0.45' : ''}">
       <td style="color:${TENSE_COLORS[r.name]||'var(--text)'}">${r.name}</td>
-      <td style="color:var(--muted);text-align:right;padding-right:12px">${r.total}</td>
+      <td style="color:var(--muted);text-align:right;padding-right:12px">${r.total || '—'}</td>
       <td style="padding-left:4px">
-        <div style="display:flex;align-items:center;gap:8px;width:100%">
+        ${r.acc === null
+          ? `<span style="color:var(--muted);font-size:0.72rem">—</span>`
+          : `<div style="display:flex;align-items:center;gap:8px;width:100%">
           <div style="flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;min-width:40px">
             <div style="width:${r.acc}%;height:100%;background:${r.acc < 50 ? 'var(--wrong)' : r.acc < 75 ? 'var(--accent)' : 'var(--correct)'};border-radius:2px"></div>
           </div>
           <span style="color:${r.acc < 50 ? 'var(--wrong)' : r.acc < 75 ? 'var(--accent)' : 'var(--correct)'};font-size:0.72rem;min-width:32px;text-align:right;flex-shrink:0">${r.acc}%</span>
-        </div>
+        </div>`}
       </td>
     </tr>`).join('');
 }
@@ -8558,15 +8592,25 @@ async function loadStats() {
     document.getElementById('stat-streak').textContent = bestStreak || '—';
     document.getElementById('stat-verbs-count').textContent = verbsCount;
 
-    // Build tense rows
+    // Build tense rows — all 10 tenses always shown, 0 if no data yet
+    const ALL_TENSES_ORDERED = [
+      'Présent','Imparfait','Passé composé','Plus-que-parfait',
+      'Futur proche','Futur simple',
+      'Subjonctif présent','Subjonctif passé',
+      'Conditionnel présent','Conditionnel passé',
+    ];
     const tenseMap = {};
+    ALL_TENSES_ORDERED.forEach(t => { tenseMap[t] = { correct: 0, total: 0 }; });
     data.forEach(r => {
       if (!tenseMap[r.tense]) tenseMap[r.tense] = { correct: 0, total: 0 };
       tenseMap[r.tense].correct += r.correct;
       tenseMap[r.tense].total += r.total;
     });
-    statsRowsTense = Object.entries(tenseMap)
-      .map(([t, v]) => ({ name: t, acc: Math.round(v.correct / v.total * 100), total: v.total }));
+    statsRowsTense = ALL_TENSES_ORDERED.map(t => ({
+      name: t,
+      acc:  tenseMap[t].total > 0 ? Math.round(tenseMap[t].correct / tenseMap[t].total * 100) : null,
+      total: tenseMap[t].total,
+    }));
 
     // Build verb rows
     const verbMap = {};
