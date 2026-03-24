@@ -592,12 +592,16 @@
       overflow-y: auto;
     }
 
-    header { margin-bottom: 20px; flex-wrap: wrap; gap: 8px; }
-    .title { font-size: 1.4rem; }
-    .score-display { font-size: 0.68rem; }
+    header { margin-bottom: 20px; flex-wrap: nowrap; gap: 6px; align-items: center; }
+    .title { font-size: 1.1rem; flex-shrink: 0; }
+    .score-display { font-size: 0.68rem; flex-shrink: 0; }
     .score-display .score-label { display: none; }
-    .theme-btn { padding: 4px 7px; font-size: 0.7rem; }
+    .theme-btn { padding: 4px 7px; font-size: 0.7rem; flex-shrink: 0; }
+    .auth-bar { flex-shrink: 0; gap: 6px; }
     .auth-bar img { width: 22px; height: 22px; }
+    .auth-bar .user-name { display: none; }
+    .auth-btn.sign-out { font-size: 0; padding: 4px 8px; }
+    .auth-btn.sign-out::after { content: '✕'; font-size: 0.65rem; }
 
     .filter-btn { font-size: 0.6rem; padding: 6px 10px; }
     .verb-picker-btn { flex-shrink: 0; font-size: 0.6rem; padding: 6px 10px; }
@@ -8285,7 +8289,7 @@ function updateAuthBar(user) {
   if (user) {
     bar.innerHTML = `
       ${user.user_metadata?.avatar_url ? `<img src="${user.user_metadata.avatar_url}" alt="">` : ''}
-      <span style="color:var(--text);max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${user.user_metadata?.name || user.email}</span>
+      <span class="user-name" style="color:var(--text);max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${user.user_metadata?.name || user.email}</span>
       <span class="sync-dot ok" id="sync-dot" title="Stats synced"></span>
       <button class="auth-btn sign-out" onclick="handleAuth()">Sign out</button>
     `;
