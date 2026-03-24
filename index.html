@@ -576,7 +576,51 @@
 
     .loading-title { font-size: 1.5rem; }
   }
+
+  /* Auth bar */
+  .auth-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+  .auth-bar img {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+  }
+  .auth-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 5px 12px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.18s;
+    white-space: nowrap;
+  }
+  .auth-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .auth-btn.sign-out { border-color: transparent; }
+  .auth-btn.sign-out:hover { border-color: var(--wrong); color: var(--wrong); }
+
+  .sync-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--muted);
+    display: inline-block;
+    transition: background 0.3s;
+  }
+  .sync-dot.syncing { background: var(--accent); }
+  .sync-dot.ok { background: var(--correct); }
+  .sync-dot.err { background: var(--wrong); }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div class="loading-overlay" id="loading-overlay">
@@ -591,7 +635,12 @@
 <div class="container">
   <header>
     <div class="title">Conjugaison</div>
-    <div class="score-display">Score <span id="score-display">0 / 0</span></div>
+    <div style="display:flex; align-items:center; gap:12px;">
+      <div class="score-display">Score <span id="score-display">0 / 0</span></div>
+      <div class="auth-bar" id="auth-bar">
+        <button class="auth-btn" id="auth-btn" onclick="handleAuth()">Sign in</button>
+      </div>
+    </div>
   </header>
 
   <div style="display:flex; gap:8px; align-items:center; margin-bottom:24px;">
@@ -7380,6 +7429,8 @@ function checkAnswer() {
       state = 'retyping';
       input.focus();
     }
+    // Sync to Supabase (fire and forget)
+    syncStat(current.verb.inf, current.tense, isCorrect);
   } else if (state === 'retyping') {
     if (isCorrect) {
       input.className = 'correct';
@@ -7579,6 +7630,88 @@ document.getElementById('apply-verbs').addEventListener('click', () => {
   const btn = document.getElementById('open-verb-picker');
   btn.textContent = activeVerbs.size === VERBS.length ? 'Verbes ▾' : `Verbes (${activeVerbs.size}) ▾`;
   newQuestion();
+});
+
+// ---- Supabase Auth + Stats ----
+const SUPABASE_URL = 'https://dtoovnipewwnxpnzbter.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0b292bmlwZXd3bnhwbnpidGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMzkzMTksImV4cCI6MjA4OTkxNTMxOX0.CF3ZPjyoUyd8mRsDaJk183CTqPPh-umF1-m51QwRdMA';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentUser = null;
+
+function setSyncDot(state) {
+  const dot = document.getElementById('sync-dot');
+  if (!dot) return;
+  dot.className = 'sync-dot ' + state;
+}
+
+function updateAuthBar(user) {
+  const bar = document.getElementById('auth-bar');
+  if (user) {
+    bar.innerHTML = `
+      ${user.user_metadata?.avatar_url ? `<img src="${user.user_metadata.avatar_url}" alt="">` : ''}
+      <span style="color:var(--text);max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${user.user_metadata?.name || user.email}</span>
+      <span class="sync-dot ok" id="sync-dot" title="Stats synced"></span>
+      <button class="auth-btn sign-out" onclick="handleAuth()">Sign out</button>
+    `;
+  } else {
+    bar.innerHTML = `<button class="auth-btn" onclick="handleAuth()">Sign in with Google</button>`;
+  }
+}
+
+async function handleAuth() {
+  if (currentUser) {
+    await sb.auth.signOut();
+  } else {
+    await sb.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.href }
+    });
+  }
+}
+
+async function syncStat(verb, tense, isCorrect) {
+  if (!currentUser) return;
+  setSyncDot('syncing');
+  try {
+    const { data: existing } = await sb
+      .from('verb_stats')
+      .select('id, correct, total')
+      .eq('user_id', currentUser.id)
+      .eq('verb', verb)
+      .eq('tense', tense)
+      .maybeSingle();
+
+    if (existing) {
+      await sb.from('verb_stats').update({
+        correct: existing.correct + (isCorrect ? 1 : 0),
+        total: existing.total + 1
+      }).eq('id', existing.id);
+    } else {
+      await sb.from('verb_stats').insert({
+        user_id: currentUser.id,
+        verb,
+        tense,
+        correct: isCorrect ? 1 : 0,
+        total: 1
+      });
+    }
+    setSyncDot('ok');
+  } catch(e) {
+    console.error('Sync failed:', e);
+    setSyncDot('err');
+  }
+}
+
+// Init auth state
+sb.auth.getSession().then(({ data: { session } }) => {
+  currentUser = session?.user ?? null;
+  updateAuthBar(currentUser);
+});
+
+sb.auth.onAuthStateChange((_event, session) => {
+  currentUser = session?.user ?? null;
+  updateAuthBar(currentUser);
 });
 
 // Start
