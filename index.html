@@ -727,6 +727,10 @@
   .weak-toggle:hover { border-color: var(--wrong); color: var(--wrong); }
   .weak-toggle.active { border-color: var(--wrong); color: var(--wrong); background: rgba(192,70,74,0.1); }
   .weak-toggle.disabled-state { opacity: 0.35; cursor: not-allowed; }
+  #irregular-toggle.active { border-color: var(--accent); color: var(--accent); background: rgba(201,168,76,0.1); }
+  #irregular-toggle { border-color: var(--accent-dim); color: var(--accent); }
+  #irregular-toggle:hover { border-color: var(--accent); }
+  #irregular-toggle.active { border-color: var(--accent); color: var(--accent); background: rgba(201,168,76,0.12); }
 
   /* ---- Stats view ---- */
   .stats-section { margin-bottom: 36px; }
@@ -1049,6 +1053,7 @@
       <button class="verb-picker-btn" id="open-tense-picker">Temps ▾</button>
       <button class="verb-picker-btn" id="open-verb-picker">Verbes ▾</button>
       <button class="weak-toggle" id="weak-toggle" title="Train only verbs you got wrong at least once">⚠ Faibles</button>
+      <button class="weak-toggle" id="irregular-toggle" title="Only irregular verbs">✦ Irrég.</button>
     </div>
 
   <div class="modal-overlay" id="tense-modal">
@@ -1163,7 +1168,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ---- Verb data — loaded from Supabase, cached in localStorage ----
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v1';
 const CACHE_PREFIX  = `conj_${CACHE_VERSION}_`;
 
 // Fallback VERB_DATA stays here so the quiz works even if Supabase is unreachable.
@@ -7769,6 +7774,24 @@ async function fetchVerbMeta() {
 }
 
 
+// ---- Irregular verb classification ----
+// A verb is irregular if it doesn't follow standard -er/-ir(issent)/-re patterns
+// ---- Irregular verb set ----
+const IRREGULAR_VERBS = new Set([
+  // Original 78
+  'avoir','être','aller','faire','pouvoir','vouloir','devoir','savoir','venir',
+  'prendre','mettre','dire','voir','lire','écrire','partir','sortir','dormir',
+  'courir','ouvrir','offrir','recevoir','tenir','connaître','croire','suivre',
+  'vivre','naître','mourir','conduire','attendre','répondre','vendre','entendre',
+  'perdre','rendre','descendre','commencer','manger','voyager',
+  // New 171
+  'abattre','boire','comprendre','craindre','disparaître','découvrir','décrire',
+  'détruire','employer','envoyer','inscrire','interdire','paraître','permettre',
+  'plaindre','produire','promouvoir','prévoir','rappeler','renvoyer','retenir',
+  'réduire','résoudre','souffrir','traduire','émettre','éteindre',
+  'accéder','accélérer','gérer','modérer','opérer','protéger','sécher','élever',
+]);
+
 // ---- Tense color map ----
 const TENSE_COLORS = {
   'Présent':              'var(--t-present)',
@@ -7888,12 +7911,43 @@ let current = null;
 // States: 'loading' | 'unanswered' | 'retyping' | 'done'
 let state = 'loading';
 
+// ---- Shuffle bags — no repeats until the full set has been seen ----
+const _bags = { tense: [], verb: [], pi: [] };
+
+function shuffled(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function drawFrom(bag, pool) {
+  if (bag.length === 0) {
+    const next = shuffled(pool);
+    // avoid starting with the same item the previous bag ended on
+    if (next[0] === bag._last && next.length > 1) {
+      const swap = Math.floor(Math.random() * (next.length - 1)) + 1;
+      [next[0], next[swap]] = [next[swap], next[0]];
+    }
+    bag.push(...next);
+  }
+  const item = bag.shift();
+  bag._last = item;
+  return item;
+}
+
 function pickRandom() {
-  const tenseKeys = [...activeTenses];
-  const tense = tenseKeys[Math.floor(Math.random() * tenseKeys.length)];
-  const pool = VERBS.filter(v => activeVerbs.has(v.inf));
-  const verb = pool[Math.floor(Math.random() * pool.length)];
-  const pi = Math.floor(Math.random() * 6);
+  const tensePool = [...activeTenses];
+  let verbPool = VERBS.filter(v => activeVerbs.has(v.inf));
+  if (irregMode) verbPool = verbPool.filter(v => IRREGULAR_VERBS.has(v.inf));
+  if (verbPool.length === 0) verbPool = VERBS.filter(v => activeVerbs.has(v.inf));
+  const piPool    = [0, 1, 2, 3, 4, 5];
+
+  const tense = drawFrom(_bags.tense, tensePool);
+  const verb  = drawFrom(_bags.verb,  verbPool);
+  const pi    = drawFrom(_bags.pi,    piPool);
   return { tense, verb, pi };
 }
 
@@ -8090,6 +8144,7 @@ document.getElementById('apply-tenses').addEventListener('click', async () => {
     !Object.values(VERB_DATA).some(v => v[t])
   );
   activeTenses = new Set(pendingTenses);
+  _bags.tense = []; _bags.verb = []; _bags.pi = [];
   closeTensePicker();
   updateTenseBtn();
   if (toFetch.length > 0) {
@@ -8334,6 +8389,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 // WEAK MODE
 // ============================================================
 let weakModeOn = false;
+let irregMode  = false;
 let weakVerbs = new Set(); // verbs with at least one wrong answer (from Supabase)
 
 function updateWeakToggle() {
@@ -8348,8 +8404,24 @@ function updateWeakToggle() {
       : 'Pas encore de données (répondez à quelques questions d\'abord)';
 }
 
+function toggleIrregularMode() {
+  const btn = document.getElementById('irregular-toggle');
+  _bags.verb = [];
+  _bags.pi   = [];
+  newQuestion();
+}
+
 document.getElementById('weak-toggle').addEventListener('click', () => {
-  if (!currentUser) { alert('Connecte-toi pour utiliser le mode faibles.'); return; }
+  if (!currentUser) { alert('Connecte-toi pour utiliser le mode faibles.');
+
+document.getElementById('irregular-toggle').addEventListener('click', () => {
+  irregMode = !irregMode;
+  if (irregMode) weakModeOn = false;
+  const btn = document.getElementById('irregular-toggle');
+  btn.classList.toggle('active', irregMode);
+  _bags.tense = []; _bags.verb = []; _bags.pi = [];
+  newQuestion();
+}); return; }
   if (weakVerbs.size === 0 && !weakModeOn) return;
   weakModeOn = !weakModeOn;
   if (weakModeOn) {
