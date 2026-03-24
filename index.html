@@ -1163,7 +1163,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ---- Verb data — loaded from Supabase, cached in localStorage ----
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const CACHE_PREFIX  = `conj_${CACHE_VERSION}_`;
 
 // Fallback VERB_DATA stays here so the quiz works even if Supabase is unreachable.
