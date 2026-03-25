@@ -79,6 +79,19 @@
     letter-spacing: 0.05em;
   }
   .theme-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .nav-link {
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-decoration: none;
+    border: 1px solid var(--border);
+    padding: 5px 10px;
+    border-radius: 2px;
+    transition: all 0.18s;
+    white-space: nowrap;
+  }
+  .nav-link:hover { border-color: var(--accent); color: var(--accent); }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -1041,6 +1054,7 @@
     <div style="display:flex; align-items:center; gap:12px;">
       <div class="score-display" id="score-display-wrap"><span class="score-label">Score </span><span id="score-display">0 / 0</span></div>
       <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Toggle light/dark mode">☀</button>
+      <a class="nav-link" href="./vocab/">⇄ Vocab</a>
       <div class="auth-bar" id="auth-bar">
         <button class="auth-btn" id="auth-btn" onclick="handleAuth()">Sign in</button>
       </div>
