@@ -1,1 +1,1160 @@
+<!DOCTYPE html>
+<html lang="fr" translate="no">
+<meta name="google" content="notranslate">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vocabulaire</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital@1&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0e0e;
+    --surface: #161616;
+    --border: #2a2a2a;
+    --accent: #c9a84c;
+    --accent-dim: #7a6330;
+    --text: #e8e0d0;
+    --muted: #6b6560;
+    --correct: #5a9e6f;
+    --wrong: #c0464a;
+    --correct-bg: #0f2a18;
+    --wrong-bg: #2a0f10;
+  }
 
+  body.light {
+    --bg: #f5f2ec;
+    --surface: #ffffff;
+    --border: #ddd8d0;
+    --accent: #a07828;
+    --accent-dim: #c8a860;
+    --text: #1a1814;
+    --muted: #8a8278;
+    --correct: #2e7a48;
+    --wrong: #a03030;
+    --correct-bg: #e8f5ee;
+    --wrong-bg: #faeaea;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 24px;
+    padding-top: 40px;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 40% at 20% 20%, rgba(201,168,76,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 50% at 80% 80%, rgba(201,168,76,0.04) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container { width: 100%; max-width: 800px; position: relative; z-index: 1; }
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 48px;
+  }
+
+  .title {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    font-style: italic;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+    text-decoration: none;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .score-display {
+    font-size: 0.75rem;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .score-display span { color: var(--accent); font-weight: 500; }
+
+  .theme-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.18s;
+  }
+  .theme-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .nav-link {
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-decoration: none;
+    border: 1px solid var(--border);
+    padding: 5px 10px;
+    border-radius: 2px;
+    transition: all 0.18s;
+  }
+  .nav-link:hover { border-color: var(--accent); color: var(--accent); }
+
+  .auth-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+  .auth-bar img { width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--border); }
+  .auth-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 5px 12px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.18s;
+  }
+  .auth-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .auth-btn.sign-out:hover { border-color: var(--wrong); color: var(--wrong); }
+
+  .sync-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+  .sync-dot.ok      { background: var(--correct); }
+  .sync-dot.syncing { background: var(--accent); }
+  .sync-dot.err     { background: var(--wrong); }
+
+  /* ---- Tabs ---- */
+  .tab-nav {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 36px;
+  }
+  .tab-btn {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 10px 24px 10px 0;
+    cursor: pointer;
+    position: relative;
+    transition: color 0.18s;
+  }
+  .tab-btn::after {
+    content: '';
+    position: absolute;
+    bottom: -1px; left: 0; right: 24px;
+    height: 1px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transition: transform 0.18s;
+  }
+  .tab-btn.active { color: var(--text); }
+  .tab-btn.active::after { transform: scaleX(1); }
+
+  /* ---- Filters toolbar ---- */
+  .filters {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+
+  .filter-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 7px 14px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.18s;
+    white-space: nowrap;
+  }
+  .filter-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .filter-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(201,168,76,0.08); }
+
+  /* ---- Card ---- */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 40px;
+    position: relative;
+    transition: border-color 0.3s;
+    margin-bottom: 16px;
+  }
+  .card.correct { border-color: var(--correct); background: var(--correct-bg); }
+  .card.wrong   { border-color: var(--wrong);   background: var(--wrong-bg); }
+  .card.fade-in { animation: fadeIn 0.18s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  .card-meta {
+    display: flex;
+    gap: 40px;
+    margin-bottom: 28px;
+  }
+  .meta-group { display: flex; flex-direction: column; gap: 4px; }
+  .meta-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .meta-value {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--accent);
+  }
+
+  .word-display {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.8rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+    line-height: 1.1;
+  }
+  .word-chapter {
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-bottom: 32px;
+  }
+
+  .input-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .dir-label {
+    font-size: 0.8rem;
+    color: var(--muted);
+    min-width: 60px;
+    flex-shrink: 0;
+    letter-spacing: 0.05em;
+  }
+  .answer-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 1.1rem;
+    padding: 6px 0;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .answer-input:focus { border-bottom-color: var(--accent); }
+  .answer-input.correct { border-bottom-color: var(--correct); color: var(--correct); }
+  .answer-input.wrong   { border-bottom-color: var(--wrong);   color: var(--wrong); }
+
+  .feedback {
+    font-size: 0.82rem;
+    min-height: 1.4em;
+    margin-top: 12px;
+    letter-spacing: 0.03em;
+  }
+  .feedback.correct { color: var(--correct); }
+  .feedback.wrong   { color: var(--wrong); }
+  .feedback.retype  { color: var(--accent); }
+
+  /* ---- Direction toggle ---- */
+  .dir-toggle {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    align-items: center;
+  }
+  .dir-label-main { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-right: 4px; }
+  .dir-opt {
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    cursor: pointer;
+    color: var(--muted);
+    background: transparent;
+    font-family: 'DM Mono', monospace;
+    transition: all 0.15s;
+  }
+  .dir-opt.active { border-color: var(--accent); color: var(--accent); }
+
+  /* ---- Next button ---- */
+  .btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 12px 28px;
+    cursor: pointer;
+    transition: all 0.18s;
+    margin-top: 8px;
+    display: none;
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ---- Stats ---- */
+  .view { display: none; }
+  .view.active { display: block; }
+
+  .overview-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 36px;
+  }
+  .stat-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 20px;
+  }
+  .stat-box-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .stat-box-value {
+    font-size: 2rem;
+    font-weight: 500;
+    color: var(--accent);
+  }
+
+  .stats-section { margin-bottom: 40px; }
+  .stats-title {
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+
+  .stats-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.78rem;
+  }
+  .stats-table th {
+    text-align: left;
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 0;
+    cursor: pointer;
+    user-select: none;
+  }
+  .stats-table th:hover { color: var(--accent); }
+  .stats-table td {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  .stats-signin-msg { text-align: center; color: var(--muted); font-size: 0.8rem; padding: 40px 0; }
+  #stats-loading { text-align: center; color: var(--muted); font-size: 0.8rem; padding: 40px 0; }
+
+  /* ---- Chapter picker modal ---- */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    width: min(480px, 94vw);
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+  }
+  .modal-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .modal-title {
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .modal-close {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-size: 1.2rem;
+    cursor: pointer;
+    line-height: 1;
+  }
+  .modal-body { padding: 20px 24px; overflow-y: auto; }
+  .modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+  }
+
+  .chip-grid { display: flex; flex-direction: column; gap: 8px; }
+  .chip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.15s;
+    border-radius: 2px;
+    font-size: 0.78rem;
+    color: var(--muted);
+    background: transparent;
+    text-align: left;
+    font-family: 'DM Mono', monospace;
+  }
+  .chip:hover { border-color: var(--accent); color: var(--text); }
+  .chip.selected { color: var(--text); }
+  .chip-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .chip-check { min-width: 14px; font-size: 0.7rem; color: var(--accent); }
+  .chip-count { margin-left: auto; font-size: 0.65rem; color: var(--muted); }
+
+  .modal-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 8px 16px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.15s;
+  }
+  .modal-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .modal-btn.primary { border-color: var(--accent); color: var(--accent); }
+  .modal-btn.primary:hover { background: rgba(201,168,76,0.1); }
+
+  /* ---- Loading overlay ---- */
+  .loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    gap: 24px;
+    transition: opacity 0.4s;
+  }
+  .loading-overlay.hidden { opacity: 0; pointer-events: none; }
+  .loading-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.4rem;
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  @media (max-width: 600px) {
+    body { padding: 16px; padding-top: 24px; }
+    header { flex-wrap: nowrap; gap: 6px; align-items: center; }
+    .title { font-size: 1.1rem; flex-shrink: 0; }
+    .header-right { gap: 6px; }
+    .score-display { font-size: 0.65rem; }
+    .score-label { display: none; }
+    .theme-btn { padding: 4px 7px; font-size: 0.7rem; flex-shrink: 0; }
+    .auth-bar { flex-shrink: 0; gap: 6px; }
+    .auth-bar img { width: 22px; height: 22px; }
+    .auth-bar .user-name { display: none; }
+    .auth-btn.sign-out { font-size: 0; padding: 4px 8px; }
+    .auth-btn.sign-out::after { content: '✕'; font-size: 0.65rem; }
+    .card { padding: 20px 18px; }
+    .word-display { font-size: 2rem; }
+    .overview-grid { grid-template-columns: repeat(2, 1fr); }
+    .filters { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+    .filters::-webkit-scrollbar { display: none; }
+    .filter-btn { flex-shrink: 0; font-size: 0.6rem; padding: 6px 10px; }
+    .nav-link { font-size: 0.6rem; padding: 4px 8px; }
+  }
+</style>
+
+<div class="loading-overlay" id="loading-overlay">
+  <div class="loading-title">Vocabulaire</div>
+</div>
+
+<div class="container">
+  <header>
+    <a class="title" href="../">Vocabulaire</a>
+    <div class="header-right">
+      <div class="score-display"><span class="score-label">Score </span><span id="score-display">0 / 0</span></div>
+      <button class="theme-btn" id="theme-btn" onclick="toggleTheme()">☀</button>
+      <a class="nav-link" href="../">⇄ Verbes</a>
+      <div class="auth-bar" id="auth-bar">
+        <button class="auth-btn" onclick="handleAuth()">Sign in</button>
+      </div>
+    </div>
+  </header>
+
+  <nav class="tab-nav">
+    <button class="tab-btn active" data-tab="quiz">Quiz</button>
+    <button class="tab-btn" data-tab="stats">Stats</button>
+  </nav>
+
+  <!-- QUIZ VIEW -->
+  <div class="view active" id="view-quiz">
+    <div class="filters">
+      <button class="filter-btn" id="open-chapter-picker">Chapitres (7) ▾</button>
+    </div>
+
+    <div class="dir-toggle">
+      <span class="dir-label-main">Direction:</span>
+      <button class="dir-opt active" id="dir-fr" onclick="setDir('fr')">FR → EN</button>
+      <button class="dir-opt" id="dir-en" onclick="setDir('en')">EN → FR</button>
+    </div>
+
+    <div class="card fade-in" id="quiz-card">
+      <div class="card-meta">
+        <div class="meta-group">
+          <div class="meta-label">Chapitre</div>
+          <div class="meta-value" id="chapter-label">—</div>
+        </div>
+      </div>
+      <div class="word-display" id="word-display">—</div>
+      <div class="word-chapter" id="word-chapter"></div>
+      <div class="input-row">
+        <span class="dir-label" id="dir-label-input">EN</span>
+        <input class="answer-input" id="answer-input" type="text" placeholder="translate…" autocomplete="off" autocorrect="off" spellcheck="false">
+      </div>
+      <div class="feedback" id="feedback"></div>
+      <button class="btn" id="next-btn" onclick="newQuestion()">Next →</button>
+    </div>
+  </div>
+
+  <!-- STATS VIEW -->
+  <div class="view" id="view-stats">
+    <div id="stats-signin-msg" class="stats-signin-msg" style="display:none">Sign in with Google to track your stats.</div>
+    <div id="stats-loading" style="display:none">Loading…</div>
+    <div id="stats-content" style="display:none">
+      <div class="stats-title">Overview</div>
+      <div class="overview-grid">
+        <div class="stat-box"><div class="stat-box-label">Total answers</div><div class="stat-box-value" id="stat-total">0</div></div>
+        <div class="stat-box"><div class="stat-box-label">Global accuracy</div><div class="stat-box-value" id="stat-accuracy">0%</div></div>
+        <div class="stat-box"><div class="stat-box-label">Words seen</div><div class="stat-box-value" id="stat-words">0</div></div>
+      </div>
+      <div class="stats-section">
+        <div class="stats-title">By chapter</div>
+        <table class="stats-table" id="chapter-stats-table">
+          <thead><tr>
+            <th style="width:45%" onclick="sortStats('chapter','name')">Chapter <span id="si-chapter-name"></span></th>
+            <th style="width:15%;text-align:right" onclick="sortStats('chapter','total')">Ans <span id="si-chapter-total"></span></th>
+            <th style="width:40%" onclick="sortStats('chapter','acc')">Accuracy <span id="si-chapter-acc">▲</span></th>
+          </tr></thead>
+          <tbody id="chapter-stats-body"></tbody>
+        </table>
+      </div>
+      <div class="stats-section">
+        <div class="stats-title">By word — weakest first</div>
+        <table class="stats-table" id="word-stats-table">
+          <thead><tr>
+            <th style="width:45%" onclick="sortStats('word','name')">Word <span id="si-word-name"></span></th>
+            <th style="width:15%;text-align:right" onclick="sortStats('word','total')">Ans <span id="si-word-total"></span></th>
+            <th style="width:40%" onclick="sortStats('word','acc')">Accuracy <span id="si-word-acc">▲</span></th>
+          </tr></thead>
+          <tbody id="word-stats-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Chapter picker modal -->
+<div class="modal-overlay" id="chapter-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Select chapters</span>
+      <button class="modal-close" onclick="closeChapterPicker()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="chip-grid" id="chapter-chips"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn" onclick="selectAllChapters()">All</button>
+      <button class="modal-btn" onclick="selectNoneChapters()">None</button>
+      <button class="modal-btn primary" onclick="applyChapters()">Apply</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ---- Supabase (separate from verbs app — different tables) ----
+const SUPABASE_URL = 'https://dtoovnipewwnxpnzbter.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0b292bmlwZXd3bnhwbnpidGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMzkzMTksImV4cCI6MjA4OTkxNTMxOX0.CF3ZPjyoUyd8mRsDaJk183CTqPPh-umF1-m51QwRdMA';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let currentUser = null;
+
+// ---- Vocab data ----
+// ---- Vocab data — fetched from Supabase, cached in localStorage ----
+const VOCAB_CACHE_VERSION = 'v1';
+const VOCAB_CACHE_PREFIX  = `vocab_${VOCAB_CACHE_VERSION}_`;
+
+// Chapter metadata (colors/names — no word data yet)
+const CHAPTER_META = {
+  '1': { name: 'La santé',              color: '#5a9e6f' },
+  '2': { name: 'Les connecteurs',       color: '#9b7ec8' },
+  '3': { name: "L'environnement",       color: '#2e7a48' },
+  '4': { name: 'Le travail',            color: '#d4884a' },
+  '5': { name: "L'éducation",           color: '#5b9ee0' },
+  '6': { name: "L'information",         color: '#88c0f0' },
+  '7': { name: 'Les relations sociales', color: '#c07040' },
+};
+
+// Runtime vocab — filled after fetch
+const VOCAB_DATA = {}; // { chapterId: { name, color, words: [[fr,en]] } }
+Object.entries(CHAPTER_META).forEach(([id, m]) => {
+  VOCAB_DATA[id] = { name: m.name, color: m.color, words: [] };
+});
+
+async function fetchChapter(chapterId) {
+  const key    = VOCAB_CACHE_PREFIX + chapterId;
+  const cached = localStorage.getItem(key);
+  if (cached) {
+    VOCAB_DATA[chapterId].words = JSON.parse(cached);
+    return;
+  }
+  const { data, error } = await sb
+    .from('vocab_data')
+    .select('fr, en')
+    .eq('chapter_id', chapterId);
+  if (error || !data) throw new Error(`Failed to fetch chapter ${chapterId}`);
+  const words = data.map(r => [r.fr, r.en]);
+  VOCAB_DATA[chapterId].words = words;
+  localStorage.setItem(key, JSON.stringify(words));
+}
+
+async function prefetchChapters(chapterIds) {
+  await Promise.all(chapterIds.map(fetchChapter));
+}
+
+
+// ---- State ----
+const ALL_CHAPTERS = Object.keys(VOCAB_DATA);
+let activeChapters = new Set(ALL_CHAPTERS);
+let pendingChapters = new Set(ALL_CHAPTERS);
+let direction = 'fr'; // 'fr' = show French, answer English; 'en' = show English, answer French
+let score = { correct: 0, total: 0 };
+let current = null;
+// states: 'unanswered' | 'retyping' | 'done'
+let state = 'unanswered';
+
+// Cooldown for words
+const WORD_COOLDOWN = 15;
+const _wordCooldown = new Map();
+const _piPools = { pi: [] };
+
+// ---- Theme ----
+(function() {
+  const saved = localStorage.getItem('vocab_theme');
+  if (saved === 'light') document.body.classList.add('light');
+  const btn = document.getElementById('theme-btn');
+  if (btn) btn.textContent = saved === 'light' ? '☾' : '☀';
+})();
+
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light');
+  localStorage.setItem('vocab_theme', isLight ? 'light' : 'dark');
+  document.getElementById('theme-btn').textContent = isLight ? '☾' : '☀';
+}
+
+// ---- Word pool ----
+function getWordPool() {
+  const pool = [];
+  for (const ch of activeChapters) {
+    if (VOCAB_DATA[ch]) {
+      VOCAB_DATA[ch].words.forEach(([fr, en]) => pool.push({ fr, en, chapter: ch }));
+    }
+  }
+  return pool;
+}
+
+// ---- Weighted random draw with cooldown ----
+function drawWord() {
+  const pool = getWordPool();
+  if (pool.length === 0) return null;
+  if (pool.length === 1) return pool[0];
+
+  // Tick down cooldowns
+  for (const [k, v] of _wordCooldown) {
+    if (v <= 1) _wordCooldown.delete(k);
+    else _wordCooldown.set(k, v - 1);
+  }
+
+  const weights = pool.map(w => _wordCooldown.has(w.fr) ? 0.3 : 1.0);
+  const total   = weights.reduce((s, w) => s + w, 0);
+  let   rand    = Math.random() * total;
+
+  let chosen = pool[pool.length - 1];
+  for (let i = 0; i < pool.length; i++) {
+    rand -= weights[i];
+    if (rand <= 0) { chosen = pool[i]; break; }
+  }
+  _wordCooldown.set(chosen.fr, WORD_COOLDOWN);
+  return chosen;
+}
+
+// ---- Quiz ----
+function setDir(d) {
+  direction = d;
+  document.getElementById('dir-fr').classList.toggle('active', d === 'fr');
+  document.getElementById('dir-en').classList.toggle('active', d === 'en');
+  _wordCooldown.clear();
+  newQuestion();
+}
+
+function newQuestion() {
+  const word = drawWord();
+  if (!word) return;
+  current = { word, answer: null };
+  state = 'unanswered';
+
+  const card = document.getElementById('quiz-card');
+  card.className = 'card fade-in';
+  document.getElementById('next-btn').style.display = 'none';
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('feedback').className = 'feedback';
+
+  const input = document.getElementById('answer-input');
+  input.value = '';
+  input.className = 'answer-input';
+  input.disabled = false;
+  input.placeholder = 'translate…';
+
+  const ch = VOCAB_DATA[word.chapter];
+  document.getElementById('chapter-label').textContent = ch.name;
+  document.getElementById('chapter-label').style.color = ch.color;
+  document.getElementById('word-display').textContent = direction === 'fr' ? word.fr : word.en;
+  document.getElementById('word-chapter').textContent = ch.name;
+  document.getElementById('dir-label-input').textContent = direction === 'fr' ? 'EN' : 'FR';
+
+  setTimeout(() => input.focus(), 50);
+}
+
+function normalise(s) {
+  return s.trim().toLowerCase()
+    .replace(/[àâä]/g, 'a').replace(/[éèêë]/g, 'e')
+    .replace(/[îï]/g, 'i').replace(/[ôö]/g, 'o')
+    .replace(/[ùûü]/g, 'u').replace(/ç/g, 'c')
+    .replace(/['']/g, "'").replace(/\s+/g, ' ');
+}
+
+function getCorrectAnswer() {
+  return direction === 'fr' ? current.word.en : current.word.fr;
+}
+
+function checkAnswer() {
+  if (state === 'done') { newQuestion(); return; }
+
+  const input = document.getElementById('answer-input');
+  const raw   = input.value.trim();
+  if (!raw) return;
+
+  const correct = getCorrectAnswer();
+
+  // Accept if any slash-separated variant matches
+  const variants = correct.split('/').map(v => normalise(v.trim()));
+  // Also accept partial match — if user types one of multiple accepted forms
+  const userNorm = normalise(raw);
+  const isCorrect = variants.some(v => v === userNorm || v.includes(userNorm) && userNorm.length > 3);
+
+  if (state === 'retyping') {
+    if (normalise(raw) === normalise(correct)) {
+      state = 'done';
+      input.disabled = true;
+      document.getElementById('next-btn').style.display = 'block';
+      document.getElementById('feedback').textContent = '';
+    } else {
+      document.getElementById('feedback').textContent = 'Keep trying…';
+      document.getElementById('feedback').className = 'feedback retype';
+      input.value = '';
+    }
+    return;
+  }
+
+  score.total++;
+  document.getElementById('score-display').textContent = `${score.correct} / ${score.total}`;
+
+  if (isCorrect) {
+    score.correct++;
+    document.getElementById('score-display').textContent = `${score.correct} / ${score.total}`;
+    state = 'done';
+    input.className = 'answer-input correct';
+    input.disabled = true;
+    document.getElementById('quiz-card').classList.add('correct');
+    document.getElementById('feedback').textContent = '✓ ' + correct;
+    document.getElementById('feedback').className = 'feedback correct';
+    document.getElementById('next-btn').style.display = 'block';
+    syncStat(current.word.fr, current.word.chapter, true);
+  } else {
+    state = 'retyping';
+    input.className = 'answer-input wrong';
+    document.getElementById('quiz-card').classList.add('wrong');
+    document.getElementById('feedback').textContent = '✗ ' + correct + ' — type it to continue';
+    document.getElementById('feedback').className = 'feedback wrong';
+    input.value = '';
+    syncStat(current.word.fr, current.word.chapter, false);
+  }
+}
+
+document.getElementById('answer-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') checkAnswer();
+});
+document.getElementById('next-btn').addEventListener('click', newQuestion);
+
+// ---- Chapter picker ----
+function renderChapterChips() {
+  const grid = document.getElementById('chapter-chips');
+  grid.innerHTML = '';
+  for (const ch of ALL_CHAPTERS) {
+    const data = VOCAB_DATA[ch];
+    const selected = pendingChapters.has(ch);
+    const btn = document.createElement('button');
+    btn.className = 'chip' + (selected ? ' selected' : '');
+    btn.style.borderColor = selected ? data.color : '';
+    btn.innerHTML = `
+      <span class="chip-check">${selected ? '✓' : ''}</span>
+      <span class="chip-dot" style="background:${data.color}"></span>
+      <span>${ch}. ${data.name}</span>
+      <span class="chip-count">${data.words.length} mots</span>
+    `;
+    btn.onclick = () => {
+      if (pendingChapters.has(ch)) {
+        if (pendingChapters.size > 1) pendingChapters.delete(ch);
+      } else {
+        pendingChapters.add(ch);
+      }
+      renderChapterChips();
+    };
+    grid.appendChild(btn);
+  }
+}
+
+function openChapterPicker() {
+  pendingChapters = new Set(activeChapters);
+  renderChapterChips();
+  document.getElementById('chapter-modal').classList.add('open');
+}
+function closeChapterPicker() { document.getElementById('chapter-modal').classList.remove('open'); }
+function selectAllChapters()  { pendingChapters = new Set(ALL_CHAPTERS); renderChapterChips(); }
+function selectNoneChapters() { pendingChapters = new Set([ALL_CHAPTERS[0]]); renderChapterChips(); }
+
+async function applyChapters() {
+  const toFetch = [...pendingChapters].filter(ch => VOCAB_DATA[ch].words.length === 0);
+  activeChapters = new Set(pendingChapters);
+  closeChapterPicker();
+  if (toFetch.length > 0) {
+    try { await prefetchChapters(toFetch); } catch(e) { console.warn('Fetch failed', e); }
+  }
+  _wordCooldown.clear();
+  const total = ALL_CHAPTERS.length;
+  const active = activeChapters.size;
+  document.getElementById('open-chapter-picker').textContent =
+    active === total ? `Chapitres (${total}) ▾` : `Chapitres (${active}) ▾`;
+  newQuestion();
+}
+
+document.getElementById('open-chapter-picker').addEventListener('click', openChapterPicker);
+document.getElementById('chapter-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('chapter-modal')) closeChapterPicker();
+});
+
+// ---- Tabs ----
+let currentTab = 'quiz';
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tab = btn.dataset.tab;
+    if (tab === currentTab) return;
+    currentTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + tab));
+    if (tab === 'stats') loadStats();
+  });
+});
+
+// ---- Stats ----
+let statsRowsChapter = [];
+let statsRowsWord    = [];
+let sortState = {
+  chapter: { col: 'acc', asc: true },
+  word:    { col: 'acc', asc: true },
+};
+
+const CHAPTER_COLORS = Object.fromEntries(
+  Object.entries(CHAPTER_META).map(([k, v]) => [v.name, v.color])
+);
+
+function accBar(acc) {
+  if (acc === null) return '<span style="color:var(--muted);font-size:0.72rem">—</span>';
+  const color = acc < 50 ? 'var(--wrong)' : acc < 75 ? 'var(--accent)' : 'var(--correct)';
+  return `<div style="display:flex;align-items:center;gap:8px;width:100%">
+    <div style="flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;min-width:40px">
+      <div style="width:${acc}%;height:100%;background:${color};border-radius:2px"></div>
+    </div>
+    <span style="color:${color};font-size:0.72rem;min-width:32px;text-align:right;flex-shrink:0">${acc}%</span>
+  </div>`;
+}
+
+function renderStatsChapter() {
+  const { col, asc } = sortState.chapter;
+  const rows = [...statsRowsChapter].sort((a, b) => {
+    const av = a[col], bv = b[col];
+    if (av === null) return 1; if (bv === null) return -1;
+    return asc ? (typeof av === 'string' ? av.localeCompare(bv,'fr') : av - bv)
+               : (typeof av === 'string' ? bv.localeCompare(av,'fr') : bv - av);
+  });
+  ['name','total','acc'].forEach(c => {
+    const el = document.getElementById('si-chapter-' + c);
+    if (el) el.textContent = c === col ? (asc ? '▲' : '▼') : '';
+  });
+  document.getElementById('chapter-stats-body').innerHTML = rows.map(r => `
+    <tr style="${r.total === 0 ? 'opacity:0.45' : ''}">
+      <td style="color:${CHAPTER_COLORS[r.name]||'var(--text)'}">${r.name}</td>
+      <td style="color:var(--muted);text-align:right;padding-right:12px">${r.total || '—'}</td>
+      <td style="padding-left:4px">${accBar(r.acc)}</td>
+    </tr>`).join('');
+}
+
+function renderStatsWord() {
+  const { col, asc } = sortState.word;
+  const rows = [...statsRowsWord].sort((a, b) => {
+    const av = a[col], bv = b[col];
+    if (av === null) return 1; if (bv === null) return -1;
+    return asc ? (typeof av === 'string' ? av.localeCompare(bv,'fr') : av - bv)
+               : (typeof av === 'string' ? bv.localeCompare(av,'fr') : bv - av);
+  });
+  ['name','total','acc'].forEach(c => {
+    const el = document.getElementById('si-word-' + c);
+    if (el) el.textContent = c === col ? (asc ? '▲' : '▼') : '';
+  });
+  document.getElementById('word-stats-body').innerHTML = rows.map(r => `
+    <tr>
+      <td>${r.name}</td>
+      <td style="color:var(--muted);text-align:right;padding-right:12px">${r.total}</td>
+      <td style="padding-left:4px">${accBar(r.acc)}</td>
+    </tr>`).join('');
+}
+
+function sortStats(table, col) {
+  const s = sortState[table];
+  s.asc = s.col === col ? !s.asc : (col === 'name');
+  s.col = col;
+  if (table === 'chapter') renderStatsChapter();
+  else renderStatsWord();
+}
+
+async function loadStats() {
+  if (!currentUser) {
+    document.getElementById('stats-signin-msg').style.display = 'block';
+    document.getElementById('stats-loading').style.display = 'none';
+    document.getElementById('stats-content').style.display = 'none';
+    return;
+  }
+  document.getElementById('stats-signin-msg').style.display = 'none';
+  document.getElementById('stats-loading').style.display = 'block';
+  document.getElementById('stats-content').style.display = 'none';
+
+  try {
+    const { data } = await sb.from('vocab_stats')
+      .select('word, chapter_id, correct, total')
+      .eq('user_id', currentUser.id);
+
+    if (!data || data.length === 0) {
+      document.getElementById('stats-loading').textContent = 'No data yet — answer some questions first!';
+      return;
+    }
+
+    const totalAnswers = data.reduce((s,r) => s + r.total, 0);
+    const totalCorrect = data.reduce((s,r) => s + r.correct, 0);
+    const globalAcc    = totalAnswers > 0 ? Math.round(totalCorrect / totalAnswers * 100) : 0;
+    document.getElementById('stat-total').textContent    = totalAnswers;
+    document.getElementById('stat-accuracy').textContent = globalAcc + '%';
+    document.getElementById('stat-words').textContent    = new Set(data.map(r => r.word)).size;
+
+    // Chapter rows — all 7 always shown
+    const chMap = {};
+    ALL_CHAPTERS.forEach(ch => { chMap[ch] = { correct: 0, total: 0 }; });
+    data.forEach(r => {
+      if (chMap[r.chapter_id]) {
+        chMap[r.chapter_id].correct += r.correct;
+        chMap[r.chapter_id].total   += r.total;
+      }
+    });
+    statsRowsChapter = ALL_CHAPTERS.map(ch => ({
+      name:  VOCAB_DATA[ch].name,
+      acc:   chMap[ch].total > 0 ? Math.round(chMap[ch].correct / chMap[ch].total * 100) : null,
+      total: chMap[ch].total,
+    }));
+
+    // Word rows
+    const wMap = {};
+    data.forEach(r => {
+      if (!wMap[r.word]) wMap[r.word] = { correct: 0, total: 0 };
+      wMap[r.word].correct += r.correct;
+      wMap[r.word].total   += r.total;
+    });
+    statsRowsWord = Object.entries(wMap)
+      .map(([w, d]) => ({ name: w, acc: Math.round(d.correct / d.total * 100), total: d.total }));
+
+    sortState = { chapter: { col: 'acc', asc: true }, word: { col: 'acc', asc: true } };
+    renderStatsChapter();
+    renderStatsWord();
+
+    document.getElementById('stats-loading').style.display = 'none';
+    document.getElementById('stats-content').style.display = 'block';
+  } catch(e) {
+    console.error('loadStats failed', e);
+    document.getElementById('stats-loading').textContent = 'Failed to load stats.';
+  }
+}
+
+// ---- Supabase stats sync (vocab_stats table — separate from verb_stats) ----
+function setSyncDot(state) {
+  const dot = document.getElementById('sync-dot');
+  if (dot) { dot.className = 'sync-dot ' + state; }
+}
+
+async function syncStat(word, chapterId, isCorrect) {
+  if (!currentUser) return;
+  setSyncDot('syncing');
+  try {
+    const { data: existing } = await sb
+      .from('vocab_stats')
+      .select('id, correct, total')
+      .eq('user_id', currentUser.id)
+      .eq('word', word)
+      .eq('chapter_id', chapterId)
+      .maybeSingle();
+
+    if (existing) {
+      await sb.from('vocab_stats').update({
+        correct: existing.correct + (isCorrect ? 1 : 0),
+        total:   existing.total + 1,
+      }).eq('id', existing.id);
+    } else {
+      await sb.from('vocab_stats').insert({
+        user_id:    currentUser.id,
+        word,
+        chapter_id: chapterId,
+        correct:    isCorrect ? 1 : 0,
+        total:      1,
+      });
+    }
+    setSyncDot('ok');
+  } catch(e) {
+    console.error('vocab sync failed', e);
+    setSyncDot('err');
+  }
+}
+
+// ---- Auth ----
+function updateAuthBar(user) {
+  const bar = document.getElementById('auth-bar');
+  if (user) {
+    bar.innerHTML = `
+      ${user.user_metadata?.avatar_url ? `<img src="${user.user_metadata.avatar_url}" alt="">` : ''}
+      <span class="user-name" style="color:var(--text);max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${user.user_metadata?.name || user.email}</span>
+      <span class="sync-dot ok" id="sync-dot"></span>
+      <button class="auth-btn sign-out" onclick="handleAuth()">Sign out</button>
+    `;
+  } else {
+    bar.innerHTML = `<button class="auth-btn" onclick="handleAuth()">Sign in with Google</button>`;
+  }
+}
+
+async function handleAuth() {
+  if (currentUser) {
+    await sb.auth.signOut();
+  } else {
+    await sb.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: 'https://b1zy.github.io/FrenchWordConjug/vocab/' }
+    });
+  }
+}
+
+sb.auth.onAuthStateChange((event, session) => {
+  currentUser = session?.user || null;
+  updateAuthBar(currentUser);
+});
+sb.auth.getSession().then(({ data: { session } }) => {
+  currentUser = session?.user || null;
+  updateAuthBar(currentUser);
+});
+
+// ---- Start ----
+(async () => {
+  try {
+    await prefetchChapters([...activeChapters]);
+  } catch(e) {
+    console.warn('Initial fetch failed:', e);
+  }
+  const overlay = document.getElementById('loading-overlay');
+  overlay.classList.add('hidden');
+  setTimeout(() => overlay.style.display = 'none', 400);
+  newQuestion();
+})();
+</script>
+</html>
