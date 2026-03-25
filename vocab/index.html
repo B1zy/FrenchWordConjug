@@ -580,7 +580,7 @@
         <input class="answer-input" id="answer-input" type="text" placeholder="translate…" autocomplete="off" autocorrect="off" spellcheck="false">
       </div>
       <div class="feedback" id="feedback"></div>
-      <button class="btn" id="next-btn" onclick="newQuestion()">Next →</button>
+      <button class="btn" id="next-btn" onclick="newQuestion()" style="display:none">Next →</button>
     </div>
   </div>
 
@@ -824,8 +824,8 @@ function checkAnswer() {
     if (normalise(raw) === normalise(correct)) {
       state = 'done';
       input.disabled = true;
-      document.getElementById('next-btn').style.display = 'block';
       document.getElementById('feedback').textContent = '';
+      setTimeout(newQuestion, 400);
     } else {
       document.getElementById('feedback').textContent = 'Keep trying…';
       document.getElementById('feedback').className = 'feedback retype';
@@ -846,8 +846,8 @@ function checkAnswer() {
     document.getElementById('quiz-card').classList.add('correct');
     document.getElementById('feedback').textContent = '✓ ' + correct;
     document.getElementById('feedback').className = 'feedback correct';
-    document.getElementById('next-btn').style.display = 'block';
     syncStat(current.word.fr, current.word.chapter, true);
+    setTimeout(newQuestion, 800);
   } else {
     state = 'retyping';
     input.className = 'answer-input wrong';
