@@ -8136,6 +8136,13 @@ function updateScore() {
 
 // ---- Tense Picker ----
 let pendingTenses = new Set(activeTenses);
+// Apply persisted tense count to button immediately
+(function() {
+  const btn = document.getElementById('open-tense-picker');
+  if (!btn) return;
+  const total = Object.keys(TENSES).length;
+  btn.textContent = activeTenses.size === total ? 'Temps ▾' : `Temps (${activeTenses.size}) ▾`;
+})();
 
 function updateTenseBtn() {
   const btn = document.getElementById('open-tense-picker');
@@ -8418,10 +8425,7 @@ function toggleTheme() {
   }
   // Now VERBS is populated — initialize activeVerbs
   activeVerbs = new Set(VERBS.map(v => v.inf));
-  // Restore tense picker label
-  const _tTotal = Object.keys(TENSES).length;
-  document.getElementById('open-tense-picker').textContent =
-    activeTenses.size === _tTotal ? 'Temps ▾' : `Temps (${activeTenses.size}) ▾`;
+  updateTenseBtn();
   const overlay = document.getElementById('loading-overlay');
   overlay.classList.add('hidden');
   setTimeout(() => overlay.style.display = 'none', 500);
