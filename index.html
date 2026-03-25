@@ -7923,7 +7923,12 @@ async function prefetchAll() {
 
 // ---- App State ----
 const DEFAULT_TENSES = new Set(['Présent','Imparfait','Passé composé','Futur simple','Plus-que-parfait']);
-let activeTenses = new Set(DEFAULT_TENSES);
+const _savedTenses = localStorage.getItem('conj_activeTenses');
+const _validTenses = new Set(Object.keys(TENSES));
+let activeTenses = _savedTenses
+  ? new Set(JSON.parse(_savedTenses).filter(t => _validTenses.has(t)))
+  : new Set(DEFAULT_TENSES);
+if (activeTenses.size === 0) activeTenses = new Set(DEFAULT_TENSES);
 let score = { correct: 0, total: 0 };
 let streak = 0;
 let bestStreak = 0;
@@ -8413,6 +8418,10 @@ function toggleTheme() {
   }
   // Now VERBS is populated — initialize activeVerbs
   activeVerbs = new Set(VERBS.map(v => v.inf));
+  // Restore tense picker label
+  const _tTotal = Object.keys(TENSES).length;
+  document.getElementById('open-tense-picker').textContent =
+    activeTenses.size === _tTotal ? 'Temps ▾' : `Temps (${activeTenses.size}) ▾`;
   const overlay = document.getElementById('loading-overlay');
   overlay.classList.add('hidden');
   setTimeout(() => overlay.style.display = 'none', 500);
