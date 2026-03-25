@@ -567,7 +567,7 @@
     <div class="dir-toggle">
       <span class="dir-label-main">Direction:</span>
       <button class="dir-opt" id="dir-fr" onclick="setDir('fr')">FR → EN</button>
-      <button class="dir-opt active" id="dir-en" onclick="setDir('en')">EN → FR</button>
+      <button class="dir-opt" id="dir-en" onclick="setDir('en')">EN → FR</button>
     </div>
 
     <div class="card fade-in" id="quiz-card">
@@ -697,9 +697,19 @@ async function prefetchChapters(chapterIds) {
 
 // ---- State ----
 const ALL_CHAPTERS = Object.keys(VOCAB_DATA);
-let activeChapters = new Set(ALL_CHAPTERS);
-let pendingChapters = new Set(ALL_CHAPTERS);
-let direction = 'en'; // 'fr' = show French, answer English; 'en' = show English, answer French
+
+// Restore persisted chapters
+const _savedChapters = localStorage.getItem('vocab_activeChapters');
+let activeChapters = _savedChapters
+  ? new Set(JSON.parse(_savedChapters).filter(c => ALL_CHAPTERS.includes(c)))
+  : new Set(ALL_CHAPTERS);
+if (activeChapters.size === 0) activeChapters = new Set(ALL_CHAPTERS);
+
+let pendingChapters = new Set(activeChapters);
+
+// Restore persisted direction
+const _savedDir = localStorage.getItem('vocab_direction');
+let direction = (_savedDir === 'fr' || _savedDir === 'en') ? _savedDir : 'en';
 let score = { correct: 0, total: 0 };
 let current = null;
 // states: 'unanswered' | 'retyping' | 'done'
@@ -712,7 +722,7 @@ const _piPools = { pi: [] };
 
 // ---- Theme ----
 (function() {
-  const saved = localStorage.getItem('vocab_theme');
+  const saved = localStorage.getItem('theme');
   if (saved === 'light') document.body.classList.add('light');
   const btn = document.getElementById('theme-btn');
   if (btn) btn.textContent = saved === 'light' ? '☾' : '☀';
@@ -720,7 +730,7 @@ const _piPools = { pi: [] };
 
 function toggleTheme() {
   const isLight = document.body.classList.toggle('light');
-  localStorage.setItem('vocab_theme', isLight ? 'light' : 'dark');
+  localStorage.setItem('theme', isLight ? 'light' : 'dark');
   document.getElementById('theme-btn').textContent = isLight ? '☾' : '☀';
 }
 
@@ -763,6 +773,7 @@ function drawWord() {
 // ---- Quiz ----
 function setDir(d) {
   direction = d;
+  localStorage.setItem('vocab_direction', d);
   document.getElementById('dir-fr').classList.toggle('active', d === 'fr');
   document.getElementById('dir-en').classList.toggle('active', d === 'en');
   _wordCooldown.clear();
@@ -909,6 +920,7 @@ async function applyChapters() {
   if (toFetch.length > 0) {
     try { await prefetchChapters(toFetch); } catch(e) { console.warn('Fetch failed', e); }
   }
+  localStorage.setItem('vocab_activeChapters', JSON.stringify([...activeChapters]));
   _wordCooldown.clear();
   const total = ALL_CHAPTERS.length;
   const active = activeChapters.size;
@@ -1147,6 +1159,14 @@ sb.auth.getSession().then(({ data: { session } }) => {
 
 // ---- Start ----
 (async () => {
+  // Apply restored direction button state
+  document.getElementById('dir-fr').classList.toggle('active', direction === 'fr');
+  document.getElementById('dir-en').classList.toggle('active', direction === 'en');
+  // Restore chapter picker button label
+  const _total = ALL_CHAPTERS.length;
+  const _active = activeChapters.size;
+  document.getElementById('open-chapter-picker').textContent =
+    _active === _total ? `Chapitres (${_total}) ▾` : `Chapitres (${_active}) ▾`;
   try {
     await prefetchChapters([...activeChapters]);
   } catch(e) {
