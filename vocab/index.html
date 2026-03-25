@@ -562,8 +562,8 @@
 
     <div class="dir-toggle">
       <span class="dir-label-main">Direction:</span>
-      <button class="dir-opt active" id="dir-fr" onclick="setDir('fr')">FR → EN</button>
-      <button class="dir-opt" id="dir-en" onclick="setDir('en')">EN → FR</button>
+      <button class="dir-opt" id="dir-fr" onclick="setDir('fr')">FR → EN</button>
+      <button class="dir-opt active" id="dir-en" onclick="setDir('en')">EN → FR</button>
     </div>
 
     <div class="card fade-in" id="quiz-card">
@@ -695,7 +695,7 @@ async function prefetchChapters(chapterIds) {
 const ALL_CHAPTERS = Object.keys(VOCAB_DATA);
 let activeChapters = new Set(ALL_CHAPTERS);
 let pendingChapters = new Set(ALL_CHAPTERS);
-let direction = 'fr'; // 'fr' = show French, answer English; 'en' = show English, answer French
+let direction = 'en'; // 'fr' = show French, answer English; 'en' = show English, answer French
 let score = { correct: 0, total: 0 };
 let current = null;
 // states: 'unanswered' | 'retyping' | 'done'
@@ -846,8 +846,8 @@ function checkAnswer() {
     document.getElementById('quiz-card').classList.add('correct');
     document.getElementById('feedback').textContent = '✓ ' + correct;
     document.getElementById('feedback').className = 'feedback correct';
-    syncStat(current.word.fr, current.word.chapter, true);
     setTimeout(newQuestion, 800);
+    syncStat(current.word.fr, current.word.chapter, true);
   } else {
     state = 'retyping';
     input.className = 'answer-input wrong';
@@ -855,7 +855,7 @@ function checkAnswer() {
     document.getElementById('feedback').textContent = '✗ ' + correct + ' — type it to continue';
     document.getElementById('feedback').className = 'feedback wrong';
     input.value = '';
-    syncStat(current.word.fr, current.word.chapter, false);
+    syncStat(current.word.fr, current.word.chapter, false).catch(() => {});
   }
 }
 
