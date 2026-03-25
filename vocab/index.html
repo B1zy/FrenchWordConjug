@@ -63,7 +63,7 @@
     z-index: 0;
   }
 
-  .container { width: 100%; max-width: 800px; position: relative; z-index: 1; }
+  .container { width: 100%; max-width: 640px; position: relative; z-index: 1; }
 
   header {
     display: flex;
@@ -824,11 +824,8 @@ function checkAnswer() {
     if (normalise(raw) === normalise(correct)) {
       state = 'done';
       input.disabled = true;
-      document.getElementById('feedback').textContent = '';
       setTimeout(newQuestion, 400);
     } else {
-      document.getElementById('feedback').textContent = 'Keep trying…';
-      document.getElementById('feedback').className = 'feedback retype';
       input.value = '';
     }
     return;
