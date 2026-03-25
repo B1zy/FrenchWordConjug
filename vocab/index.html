@@ -784,10 +784,10 @@ function newQuestion() {
   input.placeholder = 'translate…';
 
   const ch = VOCAB_DATA[word.chapter];
-  document.getElementById('chapter-label').textContent = ch.name;
+  document.getElementById('chapter-label').textContent = 'Ch. ' + word.chapter + ' — ' + ch.name;
   document.getElementById('chapter-label').style.color = ch.color;
   document.getElementById('word-display').textContent = direction === 'fr' ? word.fr : word.en;
-  document.getElementById('word-chapter').textContent = ch.name;
+  document.getElementById('word-chapter').textContent = 'Ch. ' + word.chapter + ' — ' + ch.name;
   document.getElementById('dir-label-input').textContent = direction === 'fr' ? 'EN' : 'FR';
 
   setTimeout(() => input.focus(), 50);
