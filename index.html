@@ -8208,6 +8208,7 @@ document.getElementById('apply-tenses').addEventListener('click', async () => {
     !Object.values(VERB_DATA).some(v => v[t])
   );
   activeTenses = new Set(pendingTenses);
+  localStorage.setItem('conj_activeTenses', JSON.stringify([...activeTenses]));
   _bags.tense = []; _bags.pi = []; _verbCooldown.clear();
   closeTensePicker();
   updateTenseBtn();
