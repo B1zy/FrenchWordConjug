@@ -8091,8 +8091,8 @@ function checkAnswer() {
       if (typeof weakVerbs !== 'undefined') weakVerbs.add(current.verb.inf);
       updateScore();
       // Show the correct answer, then ask to retype
-      input.value = '';
       input.className = 'wrong';
+      input.select();
       fb.className = 'feedback wrong';
       fb.innerHTML = `✗ &nbsp;type <span class="correct-answer">${correct}</span> to continue`;
       card.className = 'card wrong';
@@ -8113,11 +8113,10 @@ function checkAnswer() {
       document.getElementById('next-btn').style.display = 'block';
       document.getElementById('next-btn').focus();
     } else {
-      // Still wrong — shake and clear
-      input.value = '';
+      // Still wrong — shake, keep text selected
       card.classList.add('shake');
       setTimeout(() => card.classList.remove('shake'), 400);
-      input.focus();
+      input.select();
     }
   }
 }
@@ -8208,7 +8207,7 @@ document.getElementById('apply-tenses').addEventListener('click', async () => {
     !Object.values(VERB_DATA).some(v => v[t])
   );
   activeTenses = new Set(pendingTenses);
-  localStorage.setItem('conj_activeTenses', JSON.stringify([...activeTenses]));
+  saveSettings();
   _bags.tense = []; _bags.pi = []; _verbCooldown.clear();
   closeTensePicker();
   updateTenseBtn();
@@ -8399,6 +8398,37 @@ async function syncStat(verb, tense, isCorrect) {
     console.error('Sync failed:', e);
     setSyncDot('err');
   }
+}
+
+
+// ---- User settings (persisted to DB for logged-in users) ----
+async function saveSettings() {
+  localStorage.setItem('conj_activeTenses', JSON.stringify([...activeTenses]));
+  if (!currentUser) return;
+  try {
+    // Merge into existing settings so vocab prefs are not overwritten
+    const { data: existing } = await sb.from('user_settings').select('settings').eq('user_id', currentUser.id).maybeSingle();
+    const merged = { ...(existing?.settings || {}), conj: { activeTenses: [...activeTenses] } };
+    await sb.from('user_settings').upsert({ user_id: currentUser.id, settings: merged }, { onConflict: 'user_id' });
+  } catch(e) { console.warn('saveSettings failed', e); }
+}
+
+async function loadSettings() {
+  if (!currentUser) return;
+  try {
+    const { data } = await sb.from('user_settings').select('settings').eq('user_id', currentUser.id).maybeSingle();
+    if (!data?.settings) return;
+    const s = data.settings?.conj;
+    if (!s) return;
+    if (Array.isArray(s.activeTenses) && s.activeTenses.length > 0) {
+      const valid = s.activeTenses.filter(t => t in TENSES);
+      if (valid.length > 0) {
+        activeTenses = new Set(valid);
+        localStorage.setItem('conj_activeTenses', JSON.stringify(valid));
+        updateTenseBtn();
+      }
+    }
+  } catch(e) { console.warn('loadSettings failed', e); }
 }
 
 // ---- Theme toggle ----
@@ -8828,6 +8858,7 @@ sb.auth.onAuthStateChange((_event, session) => {
   currentUser = session?.user ?? null;
   updateAuthBar(currentUser);
   if (currentUser) {
+    loadSettings();
     loadWeakVerbs();
     if (currentTab === 'stats') loadStats();
   } else {

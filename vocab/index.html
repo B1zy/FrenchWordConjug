@@ -230,6 +230,14 @@
   .card.wrong   { border-color: var(--wrong);   background: var(--wrong-bg); }
   .card.fade-in { animation: fadeIn 0.18s ease; }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%       { transform: translateX(-6px); }
+    40%       { transform: translateX(6px); }
+    60%       { transform: translateX(-4px); }
+    80%       { transform: translateX(4px); }
+  }
+  .shake { animation: shake 0.35s ease; }
 
   .card-meta {
     display: flex;
@@ -773,7 +781,7 @@ function drawWord() {
 // ---- Quiz ----
 function setDir(d) {
   direction = d;
-  localStorage.setItem('vocab_direction', d);
+  saveSettings();
   document.getElementById('dir-fr').classList.toggle('active', d === 'fr');
   document.getElementById('dir-en').classList.toggle('active', d === 'en');
   _wordCooldown.clear();
@@ -841,7 +849,7 @@ function checkAnswer() {
       input.disabled = true;
       newQuestion();
     } else {
-      input.value = '';
+      input.select();
     }
     return;
   }
@@ -863,10 +871,13 @@ function checkAnswer() {
   } else {
     state = 'retyping';
     input.className = 'answer-input wrong';
-    document.getElementById('quiz-card').classList.add('wrong');
-    document.getElementById('feedback').textContent = '✗ ' + correct + ' — type it to continue';
+    const _card = document.getElementById('quiz-card');
+    _card.classList.add('wrong');
+    _card.classList.add('shake');
+    setTimeout(() => _card.classList.remove('shake'), 400);
+    document.getElementById('feedback').textContent = '✗ ' + correct;
     document.getElementById('feedback').className = 'feedback wrong';
-    input.value = '';
+    input.select();
     syncStat(current.word.fr, current.word.chapter, false).catch(() => {});
   }
 }
@@ -920,7 +931,7 @@ async function applyChapters() {
   if (toFetch.length > 0) {
     try { await prefetchChapters(toFetch); } catch(e) { console.warn('Fetch failed', e); }
   }
-  localStorage.setItem('vocab_activeChapters', JSON.stringify([...activeChapters]));
+  saveSettings();
   _wordCooldown.clear();
   const total = ALL_CHAPTERS.length;
   const active = activeChapters.size;
@@ -1122,6 +1133,45 @@ async function syncStat(word, chapterId, isCorrect) {
   }
 }
 
+
+// ---- User settings ----
+async function saveSettings() {
+  localStorage.setItem('vocab_activeChapters', JSON.stringify([...activeChapters]));
+  localStorage.setItem('vocab_direction', direction);
+  if (!currentUser) return;
+  try {
+    const { data: existing } = await sb.from('user_settings').select('settings').eq('user_id', currentUser.id).maybeSingle();
+    const merged = { ...(existing?.settings || {}), vocab: { activeChapters: [...activeChapters], direction } };
+    await sb.from('user_settings').upsert({ user_id: currentUser.id, settings: merged }, { onConflict: 'user_id' });
+  } catch(e) { console.warn('saveSettings failed', e); }
+}
+
+async function loadSettings() {
+  if (!currentUser) return;
+  try {
+    const { data } = await sb.from('user_settings').select('settings').eq('user_id', currentUser.id).maybeSingle();
+    if (!data?.settings) return;
+    const s = data.settings?.vocab;
+    if (!s) return;
+    if (Array.isArray(s.activeChapters) && s.activeChapters.length > 0) {
+      const valid = s.activeChapters.filter(c => ALL_CHAPTERS.includes(c));
+      if (valid.length > 0) {
+        activeChapters = new Set(valid);
+        localStorage.setItem('vocab_activeChapters', JSON.stringify(valid));
+        const total = ALL_CHAPTERS.length;
+        document.getElementById('open-chapter-picker').textContent =
+          valid.length === total ? `Chapitres (${total}) ▾` : `Chapitres (${valid.length}) ▾`;
+      }
+    }
+    if (s.direction === 'fr' || s.direction === 'en') {
+      direction = s.direction;
+      localStorage.setItem('vocab_direction', direction);
+      document.getElementById('dir-fr').classList.toggle('active', direction === 'fr');
+      document.getElementById('dir-en').classList.toggle('active', direction === 'en');
+    }
+  } catch(e) { console.warn('loadSettings failed', e); }
+}
+
 // ---- Auth ----
 function updateAuthBar(user) {
   const bar = document.getElementById('auth-bar');
@@ -1151,6 +1201,7 @@ async function handleAuth() {
 sb.auth.onAuthStateChange((event, session) => {
   currentUser = session?.user || null;
   updateAuthBar(currentUser);
+  if (currentUser) loadSettings();
 });
 sb.auth.getSession().then(({ data: { session } }) => {
   currentUser = session?.user || null;
