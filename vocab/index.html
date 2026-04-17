@@ -238,6 +238,20 @@
     80%       { transform: translateX(4px); }
   }
   .shake { animation: shake 0.35s ease; }
+  .override-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    padding: 4px 12px;
+    cursor: pointer;
+    border-radius: 2px;
+    margin-left: 12px;
+    transition: all 0.15s;
+  }
+  .override-btn:hover { border-color: var(--correct); color: var(--correct); }
 
   .card-meta {
     display: flex;
@@ -576,6 +590,27 @@
       <span class="dir-label-main">Direction:</span>
       <button class="dir-opt" id="dir-fr" onclick="setDir('fr')">FR → EN</button>
       <button class="dir-opt" id="dir-en" onclick="setDir('en')">EN → FR</button>
+      <span style="width:1px;height:16px;background:var(--border);margin:0 6px"></span>
+      <span class="dir-label-main">Mode:</span>
+      <button class="dir-opt active" id="mode-endless" onclick="setMode('endless')">Endless</button>
+      <button class="dir-opt" id="mode-learn" onclick="setMode('learn')">Learn</button>
+    </div>
+
+    <div id="learn-progress" style="display:none;margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+        <span style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em">Progress</span>
+        <span style="font-size:0.65rem;color:var(--accent)" id="learn-count">0 / 0</span>
+      </div>
+      <div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden">
+        <div id="learn-bar" style="height:100%;background:var(--correct);border-radius:2px;width:0%;transition:width 0.3s"></div>
+      </div>
+    </div>
+
+    <div id="learn-complete" style="display:none;text-align:center;padding:60px 20px">
+      <div style="font-size:2rem;color:var(--accent);margin-bottom:12px">✓</div>
+      <div style="font-size:1.2rem;color:var(--text);margin-bottom:8px" id="learn-summary">All words cleared!</div>
+      <div style="font-size:0.8rem;color:var(--muted);margin-bottom:24px" id="learn-detail"></div>
+      <button class="btn" style="display:inline-block" onclick="restartLearn()">Restart</button>
     </div>
 
     <div class="card fade-in" id="quiz-card">
@@ -728,6 +763,12 @@ const WORD_COOLDOWN = 15;
 const _wordCooldown = new Map();
 const _piPools = { pi: [] };
 
+// ---- Learn mode state ----
+let quizMode = 'endless'; // 'endless' | 'learn'
+let learnPool = [];       // words remaining in learn mode
+let learnTotal = 0;       // total words at start
+let learnCorrect = 0;     // words cleared first try
+
 // ---- Theme ----
 (function() {
   const saved = localStorage.getItem('theme');
@@ -788,8 +829,66 @@ function setDir(d) {
   newQuestion();
 }
 
+function setMode(m) {
+  quizMode = m;
+  document.getElementById('mode-endless').classList.toggle('active', m === 'endless');
+  document.getElementById('mode-learn').classList.toggle('active', m === 'learn');
+  document.getElementById('learn-progress').style.display = m === 'learn' ? 'block' : 'none';
+  document.getElementById('learn-complete').style.display = 'none';
+  document.getElementById('quiz-card').style.display = '';
+  if (m === 'learn') {
+    startLearn();
+  } else {
+    _wordCooldown.clear();
+    score = { correct: 0, total: 0 };
+    document.getElementById('score-display').textContent = '0 / 0';
+    newQuestion();
+  }
+}
+
+function startLearn() {
+  learnPool = getWordPool().slice();
+  // Shuffle
+  for (let i = learnPool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [learnPool[i], learnPool[j]] = [learnPool[j], learnPool[i]];
+  }
+  learnTotal = learnPool.length;
+  learnCorrect = 0;
+  score = { correct: 0, total: 0 };
+  document.getElementById('score-display').textContent = '0 / 0';
+  updateLearnProgress();
+  newQuestion();
+}
+
+function restartLearn() {
+  document.getElementById('learn-complete').style.display = 'none';
+  document.getElementById('quiz-card').style.display = '';
+  startLearn();
+}
+
+function updateLearnProgress() {
+  const done = learnTotal - learnPool.length;
+  document.getElementById('learn-count').textContent = `${done} / ${learnTotal}`;
+  document.getElementById('learn-bar').style.width = learnTotal > 0 ? Math.round(done / learnTotal * 100) + '%' : '0%';
+}
+
+function learnComplete() {
+  document.getElementById('quiz-card').style.display = 'none';
+  document.getElementById('learn-complete').style.display = 'block';
+  document.getElementById('learn-summary').textContent = `All ${learnTotal} words cleared!`;
+  document.getElementById('learn-detail').textContent = `${learnCorrect} correct first try — ${learnTotal - learnCorrect} needed retry`;
+}
+
+
 function newQuestion() {
-  const word = drawWord();
+  let word;
+  if (quizMode === 'learn') {
+    if (learnPool.length === 0) { learnComplete(); return; }
+    word = learnPool[0]; // show first in queue
+  } else {
+    word = drawWord();
+  }
   if (!word) return;
   current = { word, answer: null };
   state = 'unanswered';
@@ -847,6 +946,12 @@ function checkAnswer() {
     if (normalise(raw) === normalise(correct)) {
       state = 'done';
       input.disabled = true;
+      if (quizMode === 'learn') {
+        // Move to back of queue — must see it again
+        const w = learnPool.shift();
+        if (w) learnPool.push(w);
+        updateLearnProgress();
+      }
       newQuestion();
     } else {
       input.select();
@@ -866,6 +971,11 @@ function checkAnswer() {
     document.getElementById('quiz-card').classList.add('correct');
     document.getElementById('feedback').textContent = '✓ ' + correct;
     document.getElementById('feedback').className = 'feedback correct';
+    if (quizMode === 'learn') {
+      learnPool.shift(); // remove from front — cleared!
+      learnCorrect++;
+      updateLearnProgress();
+    }
     newQuestion();
     syncStat(current.word.fr, current.word.chapter, true);
   } else {
@@ -875,11 +985,32 @@ function checkAnswer() {
     _card.classList.add('wrong');
     _card.classList.add('shake');
     setTimeout(() => _card.classList.remove('shake'), 400);
-    document.getElementById('feedback').textContent = '✗ ' + correct;
-    document.getElementById('feedback').className = 'feedback wrong';
+    const fb = document.getElementById('feedback');
+    fb.className = 'feedback wrong';
+    fb.innerHTML = '✗ ' + correct + ' <button class="override-btn" onclick="overrideCorrect()">I was right</button>';
     input.select();
     syncStat(current.word.fr, current.word.chapter, false).catch(() => {});
   }
+}
+
+function overrideCorrect() {
+  if (!current) return;
+  // Count as correct — undo the wrong, add a correct
+  score.correct++;
+  document.getElementById('score-display').textContent = `${score.correct} / ${score.total}`;
+  state = 'done';
+  const input = document.getElementById('answer-input');
+  input.disabled = true;
+  input.className = 'answer-input correct';
+  document.getElementById('quiz-card').className = 'card correct';
+  document.getElementById('feedback').textContent = '✓ overridden';
+  document.getElementById('feedback').className = 'feedback correct';
+  if (quizMode === 'learn') {
+    learnPool.shift();
+    learnCorrect++;
+    updateLearnProgress();
+  }
+  newQuestion();
 }
 
 document.getElementById('answer-input').addEventListener('keydown', e => {
