@@ -1188,7 +1188,7 @@ async function loadStats() {
     document.getElementById('stat-accuracy').textContent = globalAcc + '%';
     document.getElementById('stat-words').textContent    = new Set(data.map(r => r.word)).size;
 
-    // Chapter rows — all 7 always shown
+    // Chapter rows — all 7 always showns
     const chMap = {};
     ALL_CHAPTERS.forEach(ch => { chMap[ch] = { correct: 0, total: 0 }; });
     data.forEach(r => {
